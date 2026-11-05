@@ -2,3 +2,7 @@ node_modules
 .vercel
 .DS_Store
 .env*
+!.env.example
+data/*.db
+__pycache__/
+*.pyc

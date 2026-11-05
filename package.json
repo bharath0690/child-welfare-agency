@@ -3,5 +3,5 @@
   "version": "0.1.0",
   "private": true,
   "description": "Concept prototype: AI-assisted journeys for a caseworker, a prospective foster parent and a kin caregiver. Fictional data.",
-  "scripts": { "dev": "npx serve ." }
+  "scripts": { "dev": "python3 dev.py", "test": "python3 -m unittest discover -s tests" }
 }

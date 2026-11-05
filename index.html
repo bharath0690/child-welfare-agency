@@ -3,13 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Binti AI Journeys (concept prototype)</title>
+<title>Binti AI Journeys</title>
 <meta name="description" content="A concept prototype of AI-assisted journeys for a caseworker, a prospective foster parent and a kin caregiver. Fictional data. Not an official Binti product.">
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:wght@600&display=swap">
 <link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="cases.css">
 </head>
 <body>
 <header class="top">
@@ -19,7 +20,9 @@
     <button class="btn ai" id="qbtn" type="button" data-act="drawer">AI quality</button>
   </div>
 </header>
-<div class="notice"><div class="wrap">A concept prototype exploring AI-assisted journeys. Not an official Binti product. All names and data are fictional, and the AI responses are scripted.</div></div>
+<div class="notice"><div class="wrap">A concept prototype exploring AI-assisted journeys. Not an official Binti product. All names and data are fictional. Children are shown as illustrated avatars. AI runs in scripted mode unless a model API key is configured on the server.</div></div>
+
+<div id="bw" class="bw" hidden></div>
 
 <main class="wrap layout">
   <nav class="rail" id="rail" aria-label="Journey stages"></nav>
@@ -34,6 +37,7 @@
 <script src="app.js"></script>
 <script src="screens-caseworker.js"></script>
 <script src="screens-family.js"></script>
+<script src="cases.js"></script>
 <script src="boot.js"></script>
 </body>
 </html>
