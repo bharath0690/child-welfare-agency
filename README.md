@@ -2,8 +2,8 @@
 
 A working prototype of AI-assisted child welfare journeys for a **caseworker**, a **prospective foster or adoptive parent** and a **kin caregiver**. All names, cases and data are fictional. Children are shown as illustrated avatars, never photos. It is not an official Binti product.
 
-- **Cases** tab: the caseworker landing page. It has a case list with filters, a "Your day" briefing, and case and child pages. **Ask Binti AI** reads the current case, names its stage and suggests next actions you can pin and reorder, then lets you ask about the case.
-- **Journey** tabs: the original 21-screen concept walkthrough from the persona canvas (`canvas/index.html`).
+- **Product experience → Cases** (top menu): the caseworker landing page. It has a case list with filters, a "Your day" briefing, and case and child pages. **Ask Binti AI** reads the current case, names its stage and suggests next actions you can pin and reorder, then lets you ask about the case. Use **Full screen** in the panel header for a two-column view, with actions on the left and a wide chat on the right. The chat box grows as you type: Enter sends, and Shift+Enter adds a new line.
+- **Journey study** (top menu): the original 21-screen concept walkthrough from the persona canvas (`canvas/index.html`).
 - **Viewing as** switcher: stands in for sign-in. Choose one of three caseworkers, a kin caregiver or an applicant family.
 
 The design is in `docs/ai-architecture.md`, and the agent profile is in `AGENTS.md`.
