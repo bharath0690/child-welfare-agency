@@ -43,7 +43,7 @@ Every persona runs through the same 14 components. Only the scope differs.
 | Workflow engine | Fixed pipelines with model steps inside | Capture, pre-fill and report (caseworker). Intake and application (family) |
 | Speech to text | Speaker-labeled transcripts, with offline capture | Caseworker only, and only with consent |
 | Translation | Glossary-based machine translation | Outbound text needs a bilingual human check |
-| Memory | Session memory plus memory scoped to one case or application | Nothing carries across cases |
+| Memory | Session memory plus memory scoped to one case or application | Stored facts never carry across cases. The caseworker's home chat is one saved thread that reads cases live, and saves facts only to the case they belong to |
 | Guardrails | Input, retrieval, output and action checks | Kin and applicant also get safety-disclosure detection |
 | Human in the loop | Review, sign-off, warm handoff | The worker signs. The family submits |
 | Model gateway | Routing, zero-retention terms, region pinning, fallback | None |
@@ -92,7 +92,8 @@ Phase 1 proves time saved for caseworkers and ships the safety harness. Phase 2 
 
 | Feature | Problem | Mechanism | Phase |
 |---|---|---|---|
-| Day briefing | The day is assembled from spreadsheets and email | Workflow over tasks, calendar and case events, ranked by urgency | 1 |
+| Day briefing | The day is assembled from spreadsheets and email | Workflow over tasks, calendar and case events, ranked by urgency. Shown as color-coded cards (urgent, soon, routine) that start a question in the caseload chat | 1 |
+| Caseload assistant (Binti AI home) | Opening each child's page to ask a question is slow | The caseworker lands on a full-screen chat over their whole caseload. Each answer names the child and case it draws on. It reads any assigned case through the gateway, and saves memory only to one case | 1 |
 | Case next action | Working out what a case needs costs time | Rules name the stage and the actions, each with a reason and source. The worker pins and reorders, and those priorities are saved per case | 1 |
 | Case summary | Handoff packets are thin | Case retrieval with a source on every line | 1 |
 | Case chat | Answers are spread across five screens | Agent loop over case tools | 1 |
@@ -242,7 +243,7 @@ flowchart TB
 | Phase | Build | Exit test |
 |---|---|---|
 | 0 | Gateway, authorization, audit, eval harness, safety detection | A red-team run finds no cross-case or cross-family leak |
-| 1 | Caseworker: briefing, next action, summary, chat, visit capture through note and pre-fill, language check. Family: guide Q&A, triage, application assistant, schedule lookup | Time from visit to signed note falls, and draft accuracy meets its bar |
+| 1 | Caseworker: briefing, caseload assistant, next action, summary, chat, visit capture through note and pre-fill, language check. Family: guide Q&A, triage, application assistant, schedule lookup | Time from visit to signed note falls, and draft accuracy meets its bar |
 | 2 | Law retrieval, family finding and translation, court report, document intake, benefits | Citation accuracy meets its bar in each launch jurisdiction |
 | 3 | Placement and long-term explainers, compliance watcher, analytics | Counsel and supervisors sign off |
 
@@ -253,12 +254,12 @@ The prototype uses fictional data only.
 | Design | Code |
 |---|---|
 | Runtime and personas (D1) | `binti/agent.py` loads the core rules and one persona profile from `AGENTS.md` |
-| Specialists | 14 Agent Skills in `skills/<name>/SKILL.md`. The agent sees each name and description, and calls `load_skill` for the body |
+| Specialists | 15 Agent Skills in `skills/<name>/SKILL.md`. The agent sees each name and description, and calls `load_skill` for the body |
 | Workflows (D4) | `binti/workflows.py`: briefing, visit note, pre-fill, language check, first contact, triage, application help |
 | Gateway (D2, D3) | `binti/gateway.py`: one schema registry, persona allowlist, per-user scope, disclosure matrix, audit on every call, idempotent proposals. Plain function calls stand in for MCP |
 | Stage and next action (D7) | `binti/stages.py` |
 | Retrieval (D5) | `program_search`: BM25-style keyword search, with the audience filter applied first. The vector half and the law corpus come in Phase 2 |
-| Memory | `chat_messages` and `case_memory`, keyed by case or application |
+| Memory | `chat_messages` (keyed by case, application, or the caseworker's caseload thread) and `case_memory` (always keyed by one case or application) |
 | Guardrails | `binti/guardrails.py`. Safety detection runs before any model call |
 | Model gateway | `binti/llm.py`: DeepSeek through `DEEPSEEK_API_KEY`, with a scripted fallback on the same gateway. The vendor choice is still subject to open questions 3 and 6 |
 | Audit | The `audit_log` table, shown in the case page's Audit log tab |

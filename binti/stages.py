@@ -97,7 +97,7 @@ def actions(b):
             continue
         n = _days(t["due_on"])
         if n < 0:
-            add(f"task-{t['id']}", f"Overdue: {t['title']}", f"Was due {t['due_on']} ({-n} days ago).",
+            add(f"task-{t['id']}", f"Overdue: {t['title']}", f"Was due {t['due_on']} ({-n} day{'s' if n != -1 else ''} ago).",
                 "Task list", 85 + min(-n, 10), t["due_on"])
         elif n <= 7:
             add(f"task-{t['id']}", t["title"], f"Due {t['due_on']} (in {n} days).", "Task list", 70 - n, t["due_on"])

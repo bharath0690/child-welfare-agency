@@ -78,7 +78,8 @@
       return "<details class='menu" + (active ? " on" : "") + "' data-menu='" + id + "'><summary>" + label +
         (active && current ? "<small>" + esc(current) + "</small>" : "") + "</summary><div class='menu-list' role='menu'>" + items + "</div></details>";
     }
-    var prod = "<a role='menuitem' href='#/cases'" + (cases ? " aria-current='page'" : "") + ">Cases<small>Case list, case pages and Binti AI</small></a>";
+    var prod = "<a role='menuitem' href='#/home'>Binti AI<small>Ask about any child or your whole caseload</small></a>" +
+      "<a role='menuitem' href='#/cases'>Cases<small>Case list and case pages</small></a>";
     var study = KEYS.map(function (k) {
       return "<a role='menuitem' href='#/" + k + "/0'" + (!cases && k === S.p ? " aria-current='page'" : "") + ">" + LABEL[k] + "<small>Seven-stage journey from the persona canvas</small></a>";
     }).join("");
@@ -141,9 +142,9 @@
 
   function clearTimers() { H.timers.forEach(clearTimeout); H.timers = []; }
   function route() {
-    var h = location.hash || "";
+    var h = location.hash || "#/home";
     var bw = document.getElementById("bw");
-    if (/^#\/(cases|case\/|application)/.test(h) && window.BW) {
+    if (/^#\/(home|cases|case\/|application)/.test(h) && window.BW) {
       clearTimers();
       S.view = "cases"; document.body.classList.add("bw-on"); bw.hidden = false;
       renderTabs(); renderDrawer(); window.BW.route(h);
