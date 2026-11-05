@@ -2,7 +2,11 @@
 
 **Goal.** Share an externally viewable prototype of the three priority Binti journeys (caseworker, prospective foster/adoptive parent, kin caregiver) with AI features. Deployed on Vercel from Git. No viewer sign-in.
 
-**Status.** v0.1: static site, vanilla JS, no build. 21 screens (7 stages x 3 personas) following `data.js`. AI is scripted. No API key.
+**Status.** v0.2: working prototype. There are two parts:
+- **Journeys:** the original 21 concept screens (vanilla JS, `data.js`).
+- **Cases workspace:** a Python stdlib API over SQLite with mock data (`binti/`, `api/index.py`). It has a case list, case and child pages, and a context-aware Binti AI panel.
+
+AI runs scripted by default and goes live with `DEEPSEEK_API_KEY`. See `README.md`.
 
 **Principles**
 - Human-led AI: every draft carries a "Binti AI draft" banner; the worker or family reviews and signs. AI never drafts placement or custody recommendations.
@@ -10,12 +14,15 @@
 - Reward with time and progress, never scores or rankings tied to child outcomes.
 - Fictional data only. Not an official Binti product.
 
-**Architecture.** `H` (app.js) holds state `S`, `H.SCR[persona][stage]` renderers, `H.ACT` click actions via `data-act`/`data-arg`, `H.CHATS` scripted chats, `H.rate` rating buttons that feed the AI quality drawer.
+**Front end.** `cases.js` renders the Cases tab (routes `#/cases`, `#/case/<id>`, `#/application`). `H` (app.js) holds state `S`, `H.SCR[persona][stage]` renderers, `H.ACT` click actions via `data-act`/`data-arg`, `H.CHATS` scripted chats, `H.rate` rating buttons that feed the AI quality drawer.
 
 **AI architecture.** The full target AI architecture (all tables plus the diagram) is in `docs/ai-architecture.md`. It is the source of truth for AI work in this repo. The persona canvas is in `canvas/index.html`.
 
-**Next (waiting on the owner's AI feature details)**
-1. Replace scripted AI with real feature specs: meeting transcription, form pre-fill, "Chat with Binti AI".
-2. Evals: draft accuracy, edit distance, bias flags caught, minutes saved. The drawer is a sketch.
-3. Optional live AI: a `/api` Vercel function with the key server-side, rate limiting, scripted fallback.
-4. Review the three drilldown journeys with the owner; they have not been reviewed yet.
+**Agent.** `AGENTS.md` defines the core agent and three persona profiles. `skills/*/SKILL.md` holds the 14 Phase 1 skills. Every tool call goes through `binti/gateway.py`.
+
+**Next**
+1. Evals: an offline harness for draft accuracy, edit distance, fault-language catch rate and safety recall. The ratings drawer is the first online signal.
+2. Real speech to text for visit capture. Transcripts are seeded today.
+3. Phase 2: law and policy RAG (vector half and corpus), court report assembly, plan builder.
+4. Persistence on Vercel (a hosted database) and rate limits per user.
+5. Review the three drilldown journeys and the Cases workspace with the owner.

@@ -73,9 +73,11 @@
   /* Shell */
   function stages() { return PRI[KEYS.indexOf(S.p)].st; }
   function renderTabs() {
-    document.getElementById("tabs").innerHTML = KEYS.map(function (k) {
-      return "<button class='tab' role='tab' type='button' data-act='persona' data-arg='" + k + "' aria-selected='" + (k === S.p) + "'>" + LABEL[k] + "</button>";
-    }).join("");
+    var cases = S.view === "cases";
+    document.getElementById("tabs").innerHTML = "<button class='tab' role='tab' type='button' data-act='cases' aria-selected='" + cases + "'>Cases</button>" +
+      KEYS.map(function (k) {
+        return "<button class='tab' role='tab' type='button' data-act='persona' data-arg='" + k + "' aria-selected='" + (!cases && k === S.p) + "'>" + LABEL[k] + " journey</button>";
+      }).join("");
   }
   function renderRail() {
     var st = stages();
@@ -133,7 +135,17 @@
 
   function clearTimers() { H.timers.forEach(clearTimeout); H.timers = []; }
   function route() {
-    var m = (location.hash || "").match(/^#\/(caseworker|parent|kin)\/(\d)$/);
+    var h = location.hash || "";
+    var bw = document.getElementById("bw");
+    if (/^#\/(cases|case\/|application)/.test(h) && window.BW) {
+      clearTimers();
+      S.view = "cases"; document.body.classList.add("bw-on"); bw.hidden = false;
+      renderTabs(); renderDrawer(); window.BW.route(h);
+      if (!document.body.dataset.ready) document.body.dataset.ready = "1"; else window.scrollTo(0, 0);
+      return;
+    }
+    S.view = "journeys"; document.body.classList.remove("bw-on"); if (bw) bw.hidden = true;
+    var m = h.match(/^#\/(caseworker|parent|kin)\/(\d)$/);
     var p = m ? m[1] : "caseworker", i = m ? +m[2] : 0;
     if (i > 6) i = 0;
     if (p !== S.p || i !== S.i) clearTimers();
@@ -144,8 +156,10 @@
   H.go = function (p, i) { location.hash = "#/" + p + "/" + i; };
 
   ACT.persona = function (a) { H.go(a, 0); };
+  ACT.cases = function () { location.hash = "#/cases"; };
   ACT.stage = function (a) { H.go(S.p, +a); };
-  ACT.drawer = function () { S.drawer = !S.drawer; render(); };
+  ACT.drawer = function () { S.drawer = !S.drawer; if (S.view === "cases") { renderDrawer(); window.BW.render(); } else render(); };
+  H.renderDrawer = function () { renderDrawer(); };
   ACT.rate = function (a) { var x = a.split("|"); S.rate[x[0]] = S.rate[x[0]] === x[1] ? undefined : x[1]; if (!S.rate[x[0]]) delete S.rate[x[0]]; render(); };
   ACT.chip = function (a) { var x = a.split("|"); ask(x[0], H.CHATS[x[0]].qa[+x[1]].q, +x[1]); };
   ACT.toggle = function (a) { S.f[a] = !S.f[a]; render(); };

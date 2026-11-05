@@ -132,6 +132,7 @@ Phase 1 proves time saved for caseworkers and ships the safety harness. Phase 2 
 | Feature | Why it is needed | How it works | Phase |
 |---|---|---|---|
 | Start-of-day briefing | The day is built from spreadsheets, notes and email | Workflow over tasks, calendar and case events, ranked by urgency | 1 |
+| Case next action (context-aware panel) | Workers lose time working out what a case needs next | Opening Binti AI on a case reads it, names the journey stage with its evidence, and lists next actions by urgency, each with a reason and a source. Rules decide; the model explains. The worker pins and reorders, and those priorities are saved per case | 1 |
 | Case summary on handoff | New cases arrive as thin or scattered packets | Case RAG, with a source on every line | 1 |
 | Chat with Binti AI | Workers need instant case answers without opening five screens | Agent with case tools and case RAG | 1 |
 | Visit transcription | The keyboard competes with the family for attention | Consent-gated speech to text with speaker labels. Offline capture, sync later | 1 |
@@ -308,8 +309,33 @@ The rating buttons in the prototype are the first online signal. Fix pass bars b
 | Phase | Build | Exit test |
 |---|---|---|
 | 0 | Gateway, authorization context, audit log, eval harness, safety disclosure detection | A red-team run finds no cross-case or cross-family leak |
-| 1 | Caseworker: briefing, case summary, case chat, visit capture to note to pre-fill, language check. Family: guide Q&A, inquiry triage, application assistant, child schedule lookup | Time from visit to signed note falls against the pre-launch baseline, and draft accuracy meets the bar |
+| 1 | Caseworker: briefing, case next action, case summary, case chat, visit capture to note to pre-fill, language check. Family: guide Q&A, inquiry triage, application assistant, child schedule lookup | Time from visit to signed note falls against the pre-launch baseline, and draft accuracy meets the bar |
 | 2 | Law and policy RAG, family finding and translation, court report assembly, document intake, benefits navigator | Citation accuracy meets the bar on each launch jurisdiction |
 | 3 | Placement call explainer, long-term path explainer, compliance watcher, agency analytics | Counsel and supervisors sign off the high-stakes surfaces |
 
 Caseworker features go first because their value is measurable in minutes and the worker reviews every output. Family-facing features need the safety harness and the law corpus first, since the person asking cannot check the answer.
+
+---
+
+## 9. Prototype implementation (this repo)
+
+This section maps the design to the code. The prototype uses fictional data only.
+
+| Design element | Prototype |
+|---|---|
+| Persona-scoped agents on one runtime | `binti/agent.py` loads the core rules and one persona profile from `AGENTS.md` |
+| Shared specialists | 14 Agent Skills in `skills/<name>/SKILL.md`. The agent sees names and descriptions and calls `load_skill` for the body |
+| Workflow vs agent loop | Workflows: `binti/workflows.py` (briefing, visit note, form pre-fill, language check, first contact, inquiry triage, application help). Agent loop: chat |
+| Identity and authorization context | Persona switcher, resolved in `gateway.Identity`: assigned cases, the kin caregiver's child, the family's own application |
+| Tool gateway (MCP) | `binti/gateway.py`: one registry with JSON schemas, persona allowlist, per-call scope check with the user's identity, disclosure matrix applied before data reaches the model, audit log on every call. Plain function calls stand in for MCP servers |
+| Writes as proposals | Every draft tool creates an idempotent proposal. People approve or reject in the UI (`gateway.decide`) |
+| Disclosure policy matrix | `disclosure` table plus an agency setting (`kin_medical`), seeded in `binti/seed.py` |
+| Hybrid RAG | Keyword (BM25-style) retrieval over program content with an audience filter applied first (`program_search`). The vector half and the law corpus are Phase 2 |
+| Memory | `chat_messages` and `case_memory`, keyed by object (case or application). Nothing carries across cases |
+| Guardrails | `binti/guardrails.py`: safety disclosure (before any model call), prompt injection, emotional cues, decision and legal-advice output checks, fault-language check, reading level |
+| Model gateway | `binti/llm.py`: DeepSeek (OpenAI-compatible tool calling) through `DEEPSEEK_API_KEY`. With no key, a scripted fallback runs on the same gateway and rules |
+| Audit and observability | `audit_log` table, shown in the case page's Audit log tab |
+| Evals | Unit tests for permissions, disclosure, stages, guardrails and the live tool loop (against a fake server). Draft ratings feed the AI quality drawer. The offline eval harness is next |
+| Speech to text | Not built. Visit transcripts are seeded with consent and speaker labels |
+
+**Additions to the design from the prototype.** The case next-action feature (section 5) is new. It covers the "current object" panel: when a caseworker opens Binti AI on a case, it gets that case's context, names the stage and suggests what to do next. The stage and action rules live in `binti/stages.py` so they can be explained and tested. Model choice is now a working assumption (DeepSeek) and stays subject to open questions 3 and 6.
