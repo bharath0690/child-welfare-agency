@@ -192,19 +192,24 @@ def t_notes_search(ident, a):
     q = [w for w in q if len(w) > 2 and w not in stop]
     if not q:
         return []
-    hits = []
+    cands = []
     for n in db.rows("SELECT id, on_date, body, status FROM notes WHERE case_id=?", (a["case_id"],)):
-        if any(w in n["body"].lower() for w in q):
-            hits.append({"source": f"Visit note {n['on_date']} ({n['status']})", "text": n["body"][:400]})
+        cands.append({"source": f"Visit note {n['on_date']} ({n['status']})", "text": n["body"][:400]})
     for v in db.rows("SELECT on_date, transcript FROM visits WHERE case_id=? AND consent=1 AND transcript IS NOT NULL",
                      (a["case_id"],)):
         for line in v["transcript"].splitlines():
-            if any(w in line.lower() for w in q):
-                hits.append({"source": f"Visit transcript {v['on_date']} {line[:7]}", "text": line[8:]})
+            if line.strip():
+                cands.append({"source": f"Visit transcript {v['on_date']} {line[:7]}", "text": line[8:]})
     for h in db.rows("SELECT on_date, text FROM history WHERE case_id=?", (a["case_id"],)):
-        if any(w in h["text"].lower() for w in q):
-            hits.append({"source": f"Case history {h['on_date']}", "text": h["text"]})
-    return hits[:12]
+        cands.append({"source": f"Case history {h['on_date']}", "text": h["text"]})
+    # Rank by rarity-weighted term matches: a word that appears everywhere (the child's name) counts for little.
+    df = {w: sum(1 for c in cands if w in c["text"].lower()) for w in q}
+    scored = []
+    for i, c in enumerate(cands):
+        score = sum(1.0 / df[w] for w in q if df[w] and w in c["text"].lower())
+        if score:
+            scored.append((-score, i, c))
+    return [c for _, _, c in sorted(scored)[:12]]
 
 
 def t_referrals_list(ident, a):

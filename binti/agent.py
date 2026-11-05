@@ -270,6 +270,11 @@ class Fallback:
     # --- caseworker ---------------------------------------------------------------------------------
     def _caseworker(self, t, raw):
         has = lambda *w: any(x in t for x in w)
+        if has("reunif", "your recommendation", "do you recommend", "would you recommend", "go home", "go back home", "return home",
+               "place him", "place her", "place them", "should he live", "should she live", "should they live", "custody",
+               "terminate", "should be adopted", "risk score", "risk level", "high risk", "how risky", "is eligible", "are eligible"):
+            return ("I can't recommend placement, custody, reunification, eligibility or risk decisions. Those are yours, your supervisor's and the court's. "
+                    "I can pull the facts and sources you need: try \"summarize this case\", \"what did the child say about visits?\" or \"when is court?\"")
         if has("remember", "note that", "keep in mind"):
             fact = re.sub(r"^(please )?(remember|note that|keep in mind)( that)?[:,]?\s*", "", raw.strip(), flags=re.I)
             self.call("memory_note", {**self.cid(), "fact": fact})
@@ -340,9 +345,6 @@ class Fallback:
             ps = self.call("placements_list", self.cid())
             return "Placements (Source: placements):\n" + "\n".join(
                 f"- {p['caregiver']} ({p['kind']}), from {_fmt_date(p['start_on'])}" + (" — current" if p["current"] else f" to {_fmt_date(p['end_on'])}") for p in ps)
-        if has("place", "remove", "custody", "risk", "terminate", "eligib"):
-            return ("I can't recommend placement, custody, eligibility or risk decisions. Those are yours, your supervisor's and the court's. "
-                    "I can pull the facts and sources you need: try \"summarize this case\" or \"which relatives haven't we reached?\"")
         hits = self.call("notes_search", {**self.cid(), "query": raw})
         if hits:
             return "Here's what I found in this case record:\n" + "\n".join(f"- \"{h['text']}\" (Source: {h['source']})" for h in hits[:5])

@@ -21,7 +21,7 @@ AI runs scripted by default and goes live with `DEEPSEEK_API_KEY`. See `README.m
 **Agent.** `AGENTS.md` defines the core agent and three persona profiles. `skills/*/SKILL.md` holds the 14 Phase 1 skills. Every tool call goes through `binti/gateway.py`.
 
 **Next**
-1. Evals: an offline harness for draft accuracy, edit distance, fault-language catch rate and safety recall. The ratings drawer is the first online signal.
+1. Evals: the 25-case golden set is in `evals/` (24/25 pass; T1 needs a plain-language rewrite of the kin guide content). Next, add law citation and abstain sets with counsel, bilingual translation review, and edit distance from real signed notes.
 2. Real speech to text for visit capture. Transcripts are seeded today.
 3. Phase 2: law and policy RAG (vector half and corpus), court report assembly, plan builder.
 4. Persistence on Vercel (a hosted database) and rate limits per user.
