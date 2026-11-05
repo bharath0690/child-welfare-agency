@@ -2,6 +2,8 @@
 
 A static, no-build prototype of three journeys: **Caseworker**, **Prospective foster or adoptive parent** and **Kin caregiver**. All names and data are fictional. AI responses are scripted. It is not an official Binti product.
 
+The persona canvas that these journeys come from is in `canvas/index.html` (served at `/canvas` on Vercel).
+
 ## Run it locally
 ```bash
 npm run dev        # or: python3 -m http.server 3000

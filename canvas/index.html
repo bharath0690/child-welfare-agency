@@ -1,0 +1,956 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<style>body{margin:0}</style>
+<title>Binti Persona Map</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky section nav on the left (a scrolling bar on phones), seven numbered sections in reading order.
+   Category colors tag personas across sections; red marks gaps where no module serves a step. */
+:root {
+  --bg: #f5f8fc;
+  --surface: #ffffff;
+  --ink: #14212b;
+  --muted: #55646f;
+  --line: #d5dde3;
+  --accent: #0f766e;
+  --accent-soft: #d7efec;
+  --demo: #8a5a00;
+  --demo-soft: #fbe9d0;
+  --gap: #b42318;
+  --gap-soft: #fde4e1;
+  --cA: #0f766e; --cB: #2f5f9e; --cC: #8a5a00; --cD: #a1306b; --cE: #42690d;
+  --cA-soft: #dcf2ee; --cB-soft: #e1ebf9; --cC-soft: #fbecc9; --cD-soft: #f9e2ed; --cE-soft: #e7f1d3;
+  --font-display: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e171d; --surface: #16222b; --ink: #e6edf1; --muted: #93a3ae; --line: #2a3a46;
+    --accent: #5fd3c6; --accent-soft: #15403d; --demo: #f0b35e; --demo-soft: #43310f;
+    --gap: #ff9a90; --gap-soft: #4a1f1b;
+    --cA: #5fd3c6; --cB: #8db6ee; --cC: #e7b44c; --cD: #f08fbf; --cE: #a8d56a;
+    --cA-soft: #123c39; --cB-soft: #1b2b44; --cC-soft: #3a2f12; --cD-soft: #3d1d2d; --cE-soft: #26371a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e171d; --surface: #16222b; --ink: #e6edf1; --muted: #93a3ae; --line: #2a3a46;
+  --accent: #5fd3c6; --accent-soft: #15403d; --demo: #f0b35e; --demo-soft: #43310f;
+  --gap: #ff9a90; --gap-soft: #4a1f1b;
+  --cA: #5fd3c6; --cB: #8db6ee; --cC: #e7b44c; --cD: #f08fbf; --cE: #a8d56a;
+    --cA-soft: #123c39; --cB-soft: #1b2b44; --cC-soft: #3a2f12; --cD-soft: #3d1d2d; --cE-soft: #26371a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.55;
+  padding-block: 0 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--bg); }
+h1, h2, h3, h4 { font-family: var(--font-display); line-height: 1.15; margin: 0; text-wrap: balance; }
+h1 { font-size: clamp(28px, 5vw, 42px); }
+h2 { font-size: clamp(22px, 3.4vw, 30px); }
+h3 { font-size: 18px; }
+h4 { font-size: 15px; font-family: var(--font-body); font-weight: 600; }
+p { margin: 0; }
+a { color: var(--accent); }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, summary:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mono { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+
+.shell { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 36px; }
+.nav { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 20px); align-self: start; padding-top: 28px; display: flex; flex-direction: column; gap: 2px; }
+.nav b { font-family: var(--font-display); font-size: 17px; margin-bottom: 10px; }
+.nav a { text-decoration: none; color: var(--muted); padding: 6px 8px; border-radius: 4px; font-size: 14px; display: flex; gap: 8px; }
+.nav a span { font-family: var(--font-mono); font-size: 12px; opacity: .8; }
+.nav a:hover, .nav a.on { color: var(--ink); background: var(--surface); }
+@media (max-width: 880px) {
+  .shell { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; flex-direction: row; align-items: center; overflow-x: auto; padding: 8px 0; background: var(--bg); border-bottom: 1px solid var(--line); gap: 4px; }
+  .nav b { display: none; }
+  .nav a { white-space: nowrap; }
+}
+main { min-width: 0; padding-top: 28px; display: flex; flex-direction: column; gap: 56px; }
+section { display: flex; flex-direction: column; gap: 20px; scroll-margin-top: 64px; min-width: 0; }
+.sec-head { display: flex; flex-direction: column; gap: 6px; }
+.sec-head .mono { color: var(--accent); }
+.lede { max-width: 66ch; color: var(--muted); }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+ul.tight { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.callout { background: var(--accent-soft); border-radius: 6px; padding: 12px 16px; max-width: 80ch; }
+.callout.warn { background: var(--demo-soft); }
+
+.chip { font-family: var(--font-mono); font-size: 11px; padding: 2px 7px; border-radius: 3px; background: var(--accent-soft); color: var(--accent); display: inline-block; white-space: nowrap; }
+.chip.demo { background: var(--demo-soft); color: var(--demo); }
+.chip.gap { background: var(--gap-soft); color: var(--gap); }
+.chip.none { background: var(--line); color: var(--muted); }
+.chip.new { background: var(--ink); color: var(--bg); }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+
+.catblock { display: flex; flex-direction: column; gap: 10px; }
+.cathead { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.dot { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+.sub { display: flex; flex-direction: column; gap: 8px; }
+.sub > .mono { margin-top: 4px; }
+.pgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; }
+.pcard { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.pcard b { font-weight: 600; }
+.pcard .why { color: var(--muted); font-size: 13px; }
+
+details.persona { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; }
+details.persona > summary { padding: 12px 16px; cursor: pointer; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; list-style-position: inside; }
+details.persona > summary b { font-family: var(--font-display); font-size: 17px; font-weight: 600; }
+details.persona[open] > summary { border-bottom: 1px solid var(--line); }
+.pbody { padding: 14px 16px 18px; display: flex; flex-direction: column; gap: 14px; }
+.steps { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+@media (max-width: 980px) { .steps { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); } }
+.step { background: var(--bg); border-radius: 6px; padding: 10px 11px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; min-width: 0; }
+.step b { font-size: 14px; }
+.step .l { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); display: block; }
+.toolbar { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 6px 12px; font-size: 13px; }
+.btn:hover { border-color: var(--accent); }
+
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { padding: 8px 10px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+th { font-family: var(--font-mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.scroll { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; max-width: 100%; }
+.scroll table { min-width: 640px; }
+
+.mcard { display: flex; flex-direction: column; gap: 8px; }
+.mcard h3 { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; }
+
+.matrix { min-width: 920px; }
+.matrix th.c, .matrix td.c { text-align: center; padding: 6px 4px; width: 56px; }
+.matrix td.pn { position: sticky; left: 0; background: var(--surface); min-width: 190px; z-index: 1; }
+.matrix tr.grp td { background: var(--bg); font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.cell { width: 100%; min-height: 30px; border: 0; border-radius: 3px; background: color-mix(in srgb, var(--accent) calc(var(--k) * 17%), var(--surface)); color: var(--ink); font-variant-numeric: tabular-nums; }
+.cell.g { background: color-mix(in srgb, var(--gap) calc(var(--k) * 20%), var(--surface)); }
+.cell[data-k="0"] { background: transparent; color: var(--line); cursor: default; }
+.cell.sel { outline: 2px solid var(--ink); }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; }
+.stat b { font-family: var(--font-display); font-size: 28px; display: block; font-variant-numeric: tabular-nums; }
+#cellDetail { min-height: 64px; }
+#cellDetail li { margin-bottom: 4px; }
+.src li { margin-bottom: 4px; overflow-wrap: anywhere; }
+.pri-head { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); }
+.legend i { display: inline-block; width: 18px; height: 3px; margin-right: 6px; border-radius: 2px; vertical-align: middle; }
+.curve { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 10px; max-width: 100%; }
+.curve svg { display: block; min-width: 560px; width: 100%; height: auto; }
+.cv-grid { stroke: var(--line); stroke-width: 1; }
+.cv-mid { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
+.cv-today { fill: none; stroke: var(--gap); stroke-width: 2; }
+.cv-prod { fill: none; stroke: var(--accent); stroke-width: 2.5; }
+.cv-dot-t { fill: var(--gap); }
+.cv-dot-p { fill: var(--surface); stroke: var(--accent); stroke-width: 2; }
+.cv-t { fill: var(--ink); font-family: var(--font-mono); font-size: 12px; text-anchor: middle; dominant-baseline: central; }
+.cv-l { fill: var(--muted); font-family: var(--font-mono); font-size: 11px; }
+.rows { display: flex; flex-direction: column; gap: 8px; }
+.row { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px 18px; min-width: 0; }
+@media (min-width: 900px) { .row { grid-template-columns: 1.1fr 1fr 1.7fr 1fr; } }
+.row > div { min-width: 0; display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.row .l { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.row .stage b { font-family: var(--font-display); font-size: 16px; font-weight: 600; display: flex; gap: 8px; align-items: center; }
+.num { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: var(--ink); color: var(--bg); font-family: var(--font-mono); font-size: 12px; flex: none; }
+/* Color pass: light ground, tinted cards by meaning */
+.t-a { --c: var(--cA); --cs: var(--cA-soft); }
+.t-b { --c: var(--cB); --cs: var(--cB-soft); }
+.t-c { --c: var(--cC); --cs: var(--cC-soft); }
+.t-d { --c: var(--cD); --cs: var(--cD-soft); }
+.t-e { --c: var(--cE); --cs: var(--cE-soft); }
+.t-gap { --c: var(--gap); --cs: var(--gap-soft); }
+.t-demo { --c: var(--demo); --cs: var(--demo-soft); }
+.t-acc { --c: var(--accent); --cs: var(--accent-soft); }
+.tint { background: var(--cs, var(--surface)); border-color: color-mix(in srgb, var(--c, var(--line)) 30%, var(--line)); }
+.tint h4 { color: var(--c, var(--ink)); }
+.card, .pcard, .row, details.persona, .stat, .scroll, .curve { box-shadow: 0 1px 2px rgba(20, 33, 43, .06); }
+h1 { font-size: clamp(32px, 6vw, 48px); letter-spacing: -.01em; }
+h2 { font-size: clamp(24px, 3.6vw, 32px); }
+.hero { background: var(--accent-soft); border-radius: 12px; padding: 28px 30px; display: flex; flex-direction: column; gap: 14px; }
+.hero .lede { color: var(--ink); max-width: 70ch; }
+.legend5 { display: flex; flex-wrap: wrap; gap: 8px; }
+.legend5 span { font-size: 12.5px; font-weight: 500; padding: 4px 12px; border-radius: 999px; color: var(--c); background: var(--cs); border: 1px solid color-mix(in srgb, var(--c) 30%, transparent); }
+.sec-head .mono { align-self: flex-start; background: var(--accent-soft); color: var(--accent); padding: 3px 11px; border-radius: 999px; }
+.nav a { border-radius: 6px; }
+.nav a:hover { background: var(--accent-soft); color: var(--ink); }
+.nav a.on { background: var(--accent); color: var(--surface); }
+.nav a.on span { opacity: 1; }
+.chip.ca { background: var(--cA-soft); color: var(--cA); }
+.chip.cb { background: var(--cB-soft); color: var(--cB); }
+.chip.cc { background: var(--cC-soft); color: var(--cC); }
+.cathead { padding: 9px 14px; border: 1px solid; border-radius: 8px; }
+.cathead h3 { color: var(--c); }
+.pcard { border-color: color-mix(in srgb, var(--c, var(--line)) 30%, var(--line)); }
+details.persona { overflow: hidden; }
+details.persona > summary { background: var(--cs, var(--surface)); }
+details.persona > summary b { color: var(--c, var(--ink)); }
+.step { background: color-mix(in srgb, var(--cs, var(--bg)) 55%, var(--surface)); }
+.pri-head { padding: 12px 16px; border: 1px solid; border-radius: 8px; }
+.pri-head h3 { color: var(--c); font-size: 22px; }
+.num { background: var(--c, var(--ink)); color: var(--surface); }
+.matrix tr.grp td { background: var(--cs); color: var(--c); font-weight: 600; }
+.stat b { color: var(--c, var(--ink)); }
+.mcard h3 { color: var(--c, var(--ink)); }
+.callout { background: var(--cC-soft); }
+.tabs { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 8px; }
+.tab { flex: none; display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; color: var(--muted); font-size: 14px; white-space: nowrap; }
+.tab:hover { border-color: var(--c); color: var(--ink); }
+.tab.on { background: var(--cs); border-color: var(--c); color: var(--c); font-weight: 600; }
+.tabn { font-family: var(--font-mono); font-size: 11px; padding: 1px 7px; border-radius: 999px; background: color-mix(in srgb, var(--c) 14%, var(--surface)); color: var(--c); }
+.tabpanel { margin-top: 6px; }
+.face .fc { stroke-width: 2; }
+.face.ln-t .fc { stroke: var(--gap); }
+.face.ln-p .fc { stroke: var(--accent); }
+.face.f-p .fc { fill: var(--accent-soft); }
+.face.f-z .fc { fill: var(--demo-soft); }
+.face.f-n .fc { fill: var(--gap-soft); }
+.face .fe { fill: var(--ink); }
+.face .fm { fill: none; stroke: var(--ink); stroke-width: 1.8; stroke-linecap: round; }
+.cv-s { fill: var(--muted); font-family: var(--font-body); font-size: 10.5px; text-anchor: middle; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.fl { display: flex; align-items: center; gap: 8px; }
+.faceb { flex: none; }
+</style>
+</head>
+<body>
+
+
+<div class="shell">
+<nav class="nav" aria-label="Sections" id="nav">
+  <b>Binti Persona Map</b>
+  <a href="#problem"><span>1</span>Problem</a>
+  <a href="#goals"><span>2</span>Goals</a>
+  <a href="#personas"><span>3</span>Personas</a>
+  <a href="#journeys"><span>4</span>Journeys</a>
+  <a href="#priority"><span>5</span>Priority journeys</a>
+  <a href="#modules"><span>6</span>Modules</a>
+  <a href="#mapping"><span>7</span>Mapping</a>
+  <a href="#future"><span>8</span>Future state</a>
+  <a href="#questions"><span>9</span>Open questions</a>
+</nav>
+
+<main>
+<header class="hero">
+  <h1>Binti Persona Map</h1>
+  <p class="lede">A working map of Binti's child welfare platform: the problem, the goals, who uses it, how their days go and which modules they touch. It draws on Binti's company overview, its website and public research. The day-to-day descriptions and journey steps are educated guesses, to be checked by shadowing and interviewing real users.</p>
+  <div class="legend5"><span style="--c:var(--cA);--cs:var(--cA-soft)">Daily operators</span><span style="--c:var(--cB);--cs:var(--cB-soft)">Managers, buyers and administrators</span><span style="--c:var(--cC);--cs:var(--cC-soft)">People served and caregivers</span><span style="--c:var(--cD);--cs:var(--cD-soft)">Courts and legal</span><span style="--c:var(--cE);--cs:var(--cE-soft)">Partners</span></div>
+</header>
+
+<section id="problem">
+  <div class="sec-head"><span class="mono">1 / Problem statement and objective</span><h2>Agencies record data for compliance, while the real work happens elsewhere</h2></div>
+  <div class="card">
+    <h4>Problem statement</h4>
+    <p>Child welfare agencies run on systems built to record data for compliance. Workers do the actual work on paper, sticky notes and shared spreadsheets, then re-enter it into a state system. Handoffs lose detail, workers leave and take family knowledge with them, and children wait for the right placement while relatives who could care for them go unfound. Each state paid for its own custom build, so fixes in one state do not reach another.</p>
+  </div>
+  <div class="grid3">
+    <div class="card tint t-gap"><h4>What is broken</h4><ul class="tight">
+      <li>State systems are 20 to 30 years old in places, built by large consultancies, and act as databases for reporting.</li>
+      <li>Social workers say they came for children and families but spend much of the day on administration.</li>
+      <li>Work falls through the cracks, and turnover erases family history.</li></ul></div>
+    <div class="card tint t-demo"><h4>Why it matters</h4><ul class="tight">
+      <li>About 400,000 children are in US foster care.</li>
+      <li>Binti's overview cites high rates of later homelessness and justice involvement for these children. These figures are not verified here.</li>
+      <li>Placement with kin is associated with fewer moves and more stability.</li></ul></div>
+    <div class="card tint t-acc"><h4>What Binti is doing about it</h4><ul class="tight">
+      <li>Workflow software shaped around each team's goal, informed by shadowing social workers, families and youth.</li>
+      <li>One configurable SaaS product instead of a custom build per state.</li></ul></div>
+  </div>
+  <div class="card tint t-b">
+    <h4>Objective <span class="chip demo">Draft, confirm</span></h4>
+    <p>Give every team in a child welfare agency software built around its goal (approve more families, keep families together, reunify, place with kin), delivered as configurable SaaS that can replace custom-built state systems and become the agency's system of record.</p>
+  </div>
+</section>
+
+<section id="goals">
+  <div class="sec-head"><span class="mono">2 / Goals</span><h2>Outcome goals for children, product goals for Binti</h2>
+  <p class="lede">The outcome goals are the five things child welfare is for, in order of preference. Product and growth goals come from Binti's stated plans.</p></div>
+  <div class="scroll"><table>
+    <thead><tr><th>Type</th><th>Goal</th><th>What it means</th><th>Source</th></tr></thead>
+    <tbody>
+    <tr><td><span class="chip ca">Outcome</span></td><td>1. Prevention</td><td>Help a struggling family stay together by connecting it to services.</td><td>Binti overview</td></tr>
+    <tr><td><span class="chip ca">Outcome</span></td><td>2. Reunification</td><td>If a child must be separated, return them to their family safely.</td><td>Binti overview</td></tr>
+    <tr><td><span class="chip ca">Outcome</span></td><td>3. Permanency through kin</td><td>Place with relatives or friends of the family. Federal law requires diligent efforts to find and notify relatives.</td><td>Binti overview, scope text</td></tr>
+    <tr><td><span class="chip ca">Outcome</span></td><td>4. Adoption</td><td>Find a permanent family when return and kin are not possible.</td><td>Binti overview</td></tr>
+    <tr><td><span class="chip ca">Outcome</span></td><td>5. Support at aging out</td><td>Last resort: help a youth leave care at 18 or 21 without a permanent family.</td><td>Binti overview</td></tr>
+    <tr><td><span class="chip cb">Product</span></td><td>Workflow first</td><td>Software that makes daily work easier, with compliance data captured as a by-product.</td><td>Binti overview</td></tr>
+    <tr><td><span class="chip cb">Product</span></td><td>Configure, do not rebuild</td><td>Study what is the same and different across states, then configure variances and go live without engineering work.</td><td>Binti overview</td></tr>
+    <tr><td><span class="chip cb">Product</span></td><td>Complete the platform</td><td>Launch the remaining modules (Intake, Investigations, Eligibility and Payments) so Binti can replace a legacy system instead of sitting beside it.</td><td>Binti overview</td></tr>
+    <tr><td><span class="chip cc">Growth</span></td><td>Horizontal AI</td><td>Extend the AI package across every module and to social workers outside child welfare.</td><td>Binti overview</td></tr>
+    <tr><td><span class="chip cc">Growth</span></td><td>New domains and countries</td><td>Go deep in other government social services, and serve other countries.</td><td>Binti overview</td></tr>
+    <tr><td><span class="chip none">Measure</span></td><td>Suggested success measures</td><td>Time to license a family. Share of children placed with kin. Placement moves per child. Hours per worker spent on administration. Reunification rate. Time from entry to relatives notified.</td><td>Proposed, confirm</td></tr>
+    </tbody></table></div>
+</section>
+
+<section id="personas">
+  <div class="sec-head"><span class="mono">3 / User personas</span><h2>26 personas in 5 categories</h2>
+  <p class="lede">The first 17 personas came from the earlier version of this map. Research added nine more, marked New. The tag on each one shows where it came from.</p></div>
+  <div class="callout"><b>Why nine more.</b> Judges, attorneys and advocates make decisions from agency reports. Private agencies, community providers and Indigenous governing bodies work next to the agency in their own systems. Someone has to configure the platform and someone has to prepare the compliance reports. And a relative who receives a notice is not yet a caregiver.</div>
+  <div id="personaList" class="catblock"></div>
+</section>
+
+<section id="journeys">
+  <div class="sec-head"><span class="mono">4 / Problems and journeys</span><h2>What each persona faces day to day, and how their journey runs</h2>
+  <p class="lede">Each category and sub-category has a problem statement. Each persona has a day-to-day summary, three problems and a five-step journey. Chips under each step show which module serves it.</p></div>
+  <div class="toolbar"><button class="btn" id="openAll" type="button">Expand all journeys</button><button class="btn" id="closeAll" type="button">Collapse all</button></div>
+  <div id="journeyList" class="catblock"></div>
+</section>
+
+<section id="priority">
+  <div class="sec-head"><span class="mono">5 / Priority journeys</span><h2>Three personas to design the experience for first</h2>
+  <p class="lede">Three personas to start with, picked against three priorities: social workers whose work should feel rewarding, new parents applying for a license, and one persona with a lot of friction today. Each journey runs inside the product. The red line shows how a stage feels now, and the teal line shows the experience to aim for. Each face marks a positive, neutral or negative feeling. The scores are illustrative and need testing with real users. A stage marked New surface needs a screen that Binti's site does not describe.</p></div>
+  <div id="priorityList" class="pri catblock"></div>
+</section>
+
+<section id="modules">
+  <div class="sec-head"><span class="mono">6 / Modules</span><h2>Eight core modules and four platform capabilities</h2>
+  <p class="lede">Status comes from Binti's company overview, from early 2025, and may be out of date. Binti's site lists Intake, Investigations, Case Management, Placements and Eligibility and Payments only inside its CCWIS bundle, so those descriptions are working definitions.</p></div>
+  <div id="moduleList" class="grid2"></div>
+</section>
+
+<section id="mapping">
+  <div class="sec-head"><span class="mono">7 / Persona to module mapping</span><h2>Which modules each persona uses at each step</h2>
+  <p class="lede">Each number counts journey steps where a persona touches a module. Select a cell to see those steps. Red marks steps where a module could help but none exists today.</p></div>
+  <div class="stats" id="stats"></div>
+  <div class="scroll"><table class="matrix" id="matrix"></table></div>
+  <div class="card" id="cellDetail" aria-live="polite"><p class="muted">Select a cell to list the steps behind it.</p></div>
+  <h3>Possible gaps, by persona</h3>
+  <div id="gapList" class="grid2"></div>
+</section>
+
+<section id="future">
+  <div class="sec-head"><span class="mono">8 / Future state</span><h2>Taking the platform abroad</h2>
+  <p class="lede">Scoped to Canada and Australia. These are early readings of public sources and should be checked before anyone relies on them.</p></div>
+
+  <div class="grid2">
+    <div class="card tint t-b"><h4>Canada</h4><ul class="tight">
+      <li>Child protection is a provincial and territorial responsibility, with no national rules setting practice, so definitions and structures differ by province.</li>
+      <li>Ontario has 50 Children's Aid Societies, 13 of them Indigenous agencies. Alberta has seven regional offices and 19 Delegated First Nations Agencies. Manitoba has four authorities and 28 agencies, and families can choose their authority.</li>
+      <li>Kinship care is Alberta's largest placement type at 32.7% of children receiving services.</li>
+      <li>Bill C-92, in force since January 2020, affirms Indigenous jurisdiction. It sets a placement order (parent, family, same Indigenous group, other Indigenous group, anyone else) and requires notice to the Indigenous governing body, with limited personal information.</li>
+      <li>Ontario's Part X privacy rules cover Children's Aid Societies: consent based on capacity, access requests answered within 30 days, and breach notice.</li>
+      <li>Ontario runs a provincial system, CPIN. A 2017 sector review reported duplicate records, complex search and no report of where children in care live. That article is dated and needs a current check.</li></ul></div>
+    <div class="card tint t-e"><h4>Australia</h4><ul class="tight">
+      <li>States and territories run child protection under eight separate Acts. There is no nationally consistent law, and the national framework was non-binding.</li>
+      <li>The Aboriginal and Torres Strait Islander Child Placement Principle appears in legislation, policy or regulation in every relevant jurisdiction.</li>
+      <li>Data residency and hosting rules for government data are unconfirmed. Searches turned up only vendor material, so an official source is needed.</li></ul>
+      <p class="small muted">Binti's website mentions no presence in either country.</p></div>
+  </div>
+  <div class="scroll"><table>
+    <thead><tr><th>Local reality</th><th>What the platform would need <span class="chip demo">Hypothesis</span></th></tr></thead>
+    <tbody>
+    <tr><td>Rules differ by province, state or territory</td><td>Extend the state-by-state configuration model to a layered one: country, province or state, then agency. Indigenous agencies are separate authorities inside a province.</td></tr>
+    <tr><td>Indigenous authority and placement order (C-92, placement principle, and the US ICWA)</td><td>Treat Indigenous governing bodies as full partners: notice workflows, placement-order checks, restricted data sharing, and a partner view.</td></tr>
+    <tr><td>Privacy and consent (Ontario Part X, Australian privacy law)</td><td>Consent by capacity, record access exports within statutory deadlines, breach reporting, and role-based audit logs.</td></tr>
+    <tr><td>Existing provincial or state systems (such as CPIN)</td><td>Lean on the bi-directional API and integrate rather than replace, at least at first.</td></tr>
+    <tr><td>US federal reporting</td><td>The Federal Reporting module is US specific. Each country needs a local reporting equivalent.</td></tr>
+    <tr><td>Data location (unconfirmed)</td><td>Possible in-country hosting. Confirm with official sources before design.</td></tr>
+    <tr><td>Language and terminology</td><td>Local terms (Children's Aid Society, out-of-home care), form templates and translation. French in Canada and Indigenous languages are to be confirmed.</td></tr>
+    </tbody></table></div>
+</section>
+
+<section id="questions">
+  <div class="sec-head"><span class="mono">9 / Open questions</span><h2>Questions to settle before building further</h2></div>
+  <div class="card tint t-c"><ul class="tight">
+    <li>Should courts, attorneys, CASA volunteers and Indigenous governing bodies be direct users with their own views, or should the platform exchange data with their systems?</li>
+    <li>Which Canadian provinces and Australian states come first? Is French required in Canada?</li>
+    <li>Is aging-out and transition planning meant to be a module? Nothing covers it today, though it is the fifth goal.</li>
+  </ul></div>
+  <div class="card src"><h4>Sources</h4><ul class="tight">
+    <li><a href="https://binti.com/" target="_blank" rel="noopener">Binti: product modules and customers</a></li>
+    <li><a href="https://aifs.gov.au/cfca/publications/australian-child-protection-legislation" target="_blank" rel="noopener">AIFS: Australian child protection legislation</a></li>
+    <li><a href="https://umanitoba.ca/sites/resolve/files/2023-10/Canadian%20Child%20Welfare%20Summary%20FALL%202023%5B99%5D.pdf" target="_blank" rel="noopener">University of Manitoba: Canadian child welfare summary, fall 2023</a></li>
+    <li><a href="https://lop.parl.ca/sites/PublicWebsite/default/en_CA/ResearchPublications/LegislativeSummaries/421C92E" target="_blank" rel="noopener">Library of Parliament: legislative summary of Bill C-92</a></li>
+    <li><a href="https://www.ontario.ca/page/privacy-rules-child-and-youth-sector" target="_blank" rel="noopener">Ontario: privacy rules in the child and youth sector</a></li>
+    <li><a href="https://oacas.org/2017/03/child-welfare-provincial-information-system-approaches-the-halfway-mark" target="_blank" rel="noopener">OACAS: CPIN approaches the halfway mark (2017)</a></li>
+    <li><a href="https://facesandvoicesofrecovery.org/wp-content/uploads/sites/5/2026/02/Handout-2.3.2_Common-Roles-Involved-in-a-Child-Welfare-Case.pdf" target="_blank" rel="noopener">Common roles involved in a child welfare case</a></li>
+  </ul></div>
+</section>
+</main>
+</div>
+
+<script>
+var MODS = [
+  { id: "int", short: "Intake", name: "Intake", grp: "core", st: "demo", stt: "First version built, not launched", d: "Captures reports, searches history and screens them in or out, then routes them to investigation." },
+  { id: "inv", short: "Invest.", name: "Investigations", grp: "core", st: "demo", stt: "First version built, not launched", d: "Supports field safety assessments, findings and the decision to remove, offer services or close." },
+  { id: "lic", short: "Licens.", name: "Caregiver Licensing and Resource Management", grp: "core", st: "live", stt: "Launched in 2017", d: "Online family applications, background check and home study tracking, annual relicensing and a supervisor dashboard. 550+ agencies." },
+  { id: "plc", short: "Place.", name: "Placements", grp: "core", st: "live", stt: "Launched", d: "Matches children with families for foster care and adoption." },
+  { id: "cm", short: "Case", name: "Case Management", grp: "core", st: "live", stt: "Launched", d: "Tracks services and visits to children and families." },
+  { id: "ffe", short: "Family", name: "Family Finding and Engagement", grp: "core", st: "live", stt: "Launched", d: "Public records search, automatic genograms, templated multilingual outreach and tracking of every connection to a child." },
+  { id: "prv", short: "Prev.", name: "Service Referral Management and Prevention", grp: "core", st: "live", stt: "Rolling out from Q1 2025", d: "Closed-loop referrals to community providers, with support for Families First reporting and claiming." },
+  { id: "elg", short: "Elig.", name: "Eligibility and Payments", grp: "core", st: "demo", stt: "First version built, not launched", d: "Determines funding eligibility and pays caregivers and providers." },
+  { id: "rpt", short: "Report", name: "Federal Reporting", grp: "platform", st: "unk", stt: "Listed in the CCWIS bundle", d: "Produces federal reports from workflow data instead of re-entry. US specific." },
+  { id: "api", short: "API", name: "Bi-Directional API", grp: "platform", st: "unk", stt: "Listed in the CCWIS bundle", d: "Exchanges data with the state's legacy system so Binti can sit beside it, or replace it." },
+  { id: "ai", short: "AI", name: "Binti AI", grp: "platform", st: "live", stt: "Launched first in Licensing", d: "Fast access to case information, form drafting from audio recordings and AI form translation. Positioned as Binti's first horizontal product." },
+  { id: "cfg", short: "Config", name: "Configuration layer", grp: "platform", st: "unk", stt: "Described in the overview, not a named product", d: "Configures what varies by state without engineering work, and ships new features to every customer." }
+];
+var CATS = [
+  { id: "A", c: "cA", name: "Daily operators", prob: "Workers came to help children and families but spend much of the day on administration. The real work happens on paper, sticky notes and spreadsheets, then gets re-entered into a state system built for compliance. Things fall through the cracks, and turnover erases family context.",
+    subs: [
+      { id: "A1", name: "Front door", prob: "High-stakes decisions in minutes, on the phone and in the field, with partial information. Handoffs between intake, investigation and case work lose detail." },
+      { id: "A2", name: "Case work", prob: "Long relationships with many parallel tasks. Searching for kin and referring to services is manual, and context disappears when a worker leaves." },
+      { id: "A3", name: "Homes, placements and payments", prob: "Supply and money. Agencies need enough approved homes, quick matches and correct payments, and all three depend on paper, chasing and deadlines." }
+    ]},
+  { id: "B", c: "cB", name: "Managers, buyers and administrators", prob: "They own outcomes, budgets and compliance but see results late. They buy through procurement designed for custom builds and depend on legacy systems that are costly to change.",
+    subs: [
+      { id: "B1", name: "Leadership", prob: "Need a live view of work and outcomes. Today they build it by hand from spreadsheets and late reports." },
+      { id: "B2", name: "Technology and purchasing", prob: "Must integrate, secure, buy and configure. Every change to a bespoke system is a custom build, and RFPs copy the legacy system." },
+      { id: "B3", name: "Compliance", prob: "Re-key data from many places into federal and state reports, and find errors after deadlines." }
+    ]},
+  { id: "C", c: "cC", name: "People served and caregivers", prob: "They are the reason the system exists and the least served by it. They wait without status, repeat the same information and have little say.",
+    subs: [
+      { id: "C1", name: "Children and parents", prob: "Decisions about their lives are made quickly and explained poorly. Records do not follow a child across moves, and parents struggle to show progress." },
+      { id: "C2", name: "Caregivers", prob: "Applicants and foster parents face paperwork, long waits and payment problems. Kin caregivers get less preparation and support than licensed parents." },
+      { id: "C3", name: "Wider family", prob: "Relatives are contacted without warning, often in another language or state, and their response is rarely tracked over time." }
+    ]},
+  { id: "D", c: "cD", name: "Courts and legal", prob: "They decide and advocate on the basis of reports from the agency, which arrive late and in varying formats. They cannot easily check what was done, such as efforts to find relatives.",
+    subs: [
+      { id: "D1", name: "Decision maker", prob: "A short hearing to review a large amount of material, with little ability to verify diligent efforts." },
+      { id: "D2", name: "Advocates", prob: "Need timely access to records and services status, and spend limited time with clients. Volunteers carry the same load with less training." }
+    ]},
+  { id: "E", c: "cE", name: "Partners", prob: "They work alongside the agency in their own systems, so data is re-entered and feedback loops are missing. Indigenous governing bodies also hold their own authority over their children.",
+    subs: [
+      { id: "E1", name: "Contracted and community", prob: "Duplicate entry into their records and the agency's, and no closed loop on referrals or reporting." },
+      { id: "E2", name: "Sovereign partners", prob: "Late notice, thin shared information and placement preferences that are hard to audit." }
+    ]}
+];
+/* src: t = in Binti overview, w = web research, i = inferred. n = new in this version. Step: [name, action, pain, modules] */
+var P = [
+ { cat: "A", sub: "A1", n: "Intake screener", s: "t", why: "Intake team named in the overview",
+   day: "Takes hotline and online reports, gathers facts, decides whether a report meets the threshold for investigation, and sets a response time.",
+   pr: ["Time pressure on every call", "Prior reports sit in separate systems", "Screening decisions vary between workers"],
+   st: [["Receive report", "Takes a call or online report from a mandated reporter or the public.", "Types free-text notes while the caller is still talking.", "int"],
+        ["Search history", "Looks up the child and family for prior reports and open cases.", "Duplicate records make matching unreliable.", "int,api"],
+        ["Screen", "Applies criteria to screen in or out and sets the response time.", "Decisions vary and need supervisor review under time pressure.", "int,ai"],
+        ["Assign", "Sends screened-in reports to an investigator.", "Detail is lost, so the investigator re-asks the reporter.", "int,inv"],
+        ["Document", "Records the rationale for compliance.", "The same facts are re-entered in the state system.", "int,rpt"]] },
+ { cat: "A", sub: "A1", n: "Investigator", s: "t", why: "Investigations team named in the overview",
+   day: "Visits homes and schools, interviews children and adults, assesses safety and decides whether to remove, offer services or close. Much of the day is in the field.",
+   pr: ["Field notes on paper, typed up later", "High-stakes calls with partial information", "Heavy caseload and on-call duty"],
+   st: [["Receive assignment", "Gets a screened-in report with a response deadline.", "Report details arrive incomplete.", "int,inv"],
+        ["Visit", "Schedules visits, interviews the child and family, records observations.", "Patchy signal and handwritten notes.", "inv,ai"],
+        ["Assess safety", "Completes a safety and risk assessment and consults a supervisor.", "Needs prior history fast across several systems.", "inv,cm"],
+        ["Decide", "Chooses removal, services or closure, and goes to court if needed.", "Little time to find kin or arrange services.", "inv,ffe,prv"],
+        ["Hand over", "Writes findings and transfers the case or closes it.", "Writes the same facts again for the state system.", "inv,cm,rpt"]] },
+ { cat: "A", sub: "A2", n: "Caseworker", s: "t", why: "Case management team named in the overview",
+   day: "Manages a caseload of children and families: visits, case plans, service referrals, court reports and permanency planning.",
+   pr: ["Admin work crowds out time with families", "Context is lost when workers leave", "Court reports consume evenings"],
+   st: [["Accept case", "Receives a case and reviews its history.", "Handoff packet is thin or scattered.", "cm"],
+        ["Build plan", "Sets goals with the family and child and identifies services.", "Plans live in documents, not tracked tasks.", "cm,prv"],
+        ["Visit and monitor", "Makes required visits and records progress.", "Visit notes are written twice.", "cm,ai"],
+        ["Prepare for court", "Writes reports and recommends reunification, kin or adoption.", "Pulls facts from many places the night before.", "cm,ffe"],
+        ["Reach permanency", "Closes after reunification, guardianship or adoption.", "Closing data and reports are re-entered.", "cm,rpt"]] },
+ { cat: "A", sub: "A2", n: "Prevention worker", s: "t", why: "Prevention team named in the overview",
+   day: "Works with families before a removal: assesses needs, refers to community services and checks whether help arrived.",
+   pr: ["Referrals vanish into email and calls", "No view of whether a family got service", "Hard to show impact for funding"],
+   st: [["Identify family", "Finds an at-risk family through a report, referral or partner.", "Eligibility is unclear and applied inconsistently.", "prv,int"],
+        ["Assess needs", "Talks with the family about housing, treatment or childcare.", "Needs are recorded as free text.", "prv,cm"],
+        ["Refer", "Sends a referral to a community provider.", "No confirmation, so referrals are lost.", "prv"],
+        ["Follow up", "Checks whether the family received the service.", "Chases providers by phone.", "prv,ai"],
+        ["Close or escalate", "Closes as stable or escalates to intake.", "Outcomes are manual and hard to claim for funding.", "prv,rpt"]] },
+ { cat: "A", sub: "A2", n: "Family-finding specialist", s: "t", why: "Family finding team named in the overview",
+   day: "Searches for relatives and people close to a child, contacts them and documents every connection, often in bursts when a child enters care.",
+   pr: ["Searches across disconnected sites", "Hand-drawn family trees", "Outreach tracked by hand to show diligent effort"],
+   st: [["Receive child", "Gets a referral when a child enters care or a placement is at risk.", "No shared view of what is known about the child's network.", "ffe,cm"],
+        ["Search", "Searches records and interviews the child, parents and contacts.", "Runs searches across separate tools.", "ffe"],
+        ["Map network", "Builds a genogram and ranks people by closeness.", "Redraws the tree when facts change.", "ffe"],
+        ["Engage", "Sends outreach to relatives and follows up.", "Language barriers, and no record of who was contacted when.", "ffe,ai"],
+        ["Support placement", "Passes willing relatives to placement and licensing.", "Approval steps start from zero.", "ffe,plc,lic"]] },
+ { cat: "A", sub: "A3", n: "Licensing worker", s: "t", why: "Licensing team named in the overview",
+   day: "Processes family applications, tracks background checks and home studies, and handles annual relicensing.",
+   pr: ["Paper stacks and document chasing", "Compliance deadlines", "Supervisors lack a team view"],
+   st: [["Receive application", "Opens a new application.", "Applications arrive as mixed paper and email.", "lic"],
+        ["Verify", "Tracks background checks, references and training.", "Chases documents and checks across agencies.", "lic,api"],
+        ["Home study and approve", "Completes the home study and gets approval.", "Waits on each step with unclear status.", "lic,ai"],
+        ["Activate home", "Adds the home to the placement pool with capacity and preferences.", "Placement learns of the home late.", "lic,plc"],
+        ["Relicense", "Renews yearly and monitors compliance.", "Manual reminders and repeated document requests.", "lic,rpt"]] },
+ { cat: "A", sub: "A3", n: "Placement worker", s: "t", why: "Placements team named in the overview",
+   day: "When a child needs a home, finds a match among licensed and kin homes, often urgently and after hours.",
+   pr: ["No real-time view of capacity", "Matching by phone calls", "Siblings split for lack of beds"],
+   st: [["Receive request", "A child needs a home, often at short notice.", "Little information about the child's needs.", "plc,cm"],
+        ["Find options", "Searches for homes that fit the child.", "Capacity lists are out of date.", "plc,lic"],
+        ["Consider kin", "Checks for relatives who can take the child.", "Kin work is not visible from the placement queue.", "plc,ffe"],
+        ["Place and inform", "Confirms the placement and informs the caregiver.", "Details are shared by phone and email.", "plc,ai"],
+        ["Support stability", "Monitors the placement and handles disruptions.", "Disruptions surface late and matching restarts.", "plc,cm"]] },
+ { cat: "A", sub: "A3", n: "Eligibility and payments staff", s: "t", why: "Eligibility and payments team named in the overview",
+   day: "Determines whether a child qualifies for funding and pays foster families and providers.",
+   pr: ["Complex funding rules", "Late or wrong payments", "Payment data separate from placement data"],
+   st: [["Receive placement", "Learns of a placement or a change.", "Learns by email or form, so payment starts late.", "elg,plc"],
+        ["Determine eligibility", "Checks eligibility for federal and state funding.", "Complex rules applied manually.", "elg"],
+        ["Set rate", "Applies the rate for the child and level of care.", "Depends on information held elsewhere.", "elg,cm"],
+        ["Pay", "Issues payments to caregivers and providers.", "Late or wrong payments upset caregivers.", "elg"],
+        ["Reconcile and claim", "Reconciles and prepares claims.", "Reconciles manually against placement data.", "elg,rpt"]] },
+ { cat: "B", sub: "B1", n: "Supervisor", s: "t", why: "Supervisor dashboards described in the overview",
+   day: "Reviews work, approves decisions, balances caseloads and coaches staff.",
+   pr: ["No live view of workload and deadlines", "Approvals wait in inboxes", "Turnover leaves cases unattended"],
+   st: [["Plan the week", "Reviews caseloads and deadlines.", "Builds the picture from spreadsheets.", "cm,rpt"],
+        ["Assign work", "Assigns new cases and balances load.", "Little view of each worker's capacity.", "cm,int"],
+        ["Approve", "Approves screen-outs, placements and licenses.", "Approvals queue in email.", "int,plc,lic"],
+        ["Coach", "Reviews cases with workers.", "Review means reading long free-text notes.", "cm,ai"],
+        ["Cover transitions", "Reassigns cases when a worker leaves.", "Family context leaves with the worker.", "cm"]] },
+ { cat: "B", sub: "B1", n: "Agency director", s: "i", why: "Buyer implied by the overview",
+   day: "Responsible for outcomes, budget, staffing and compliance, and reports to the state, courts and public.",
+   pr: ["Outcome data arrives late and in pieces", "Cost pressure and turnover", "Audit findings"],
+   st: [["Set priorities", "Sets goals such as faster licensing or more kin placements.", "Cannot see baseline performance quickly.", "rpt"],
+        ["Choose systems", "Decides which tools to adopt and how they fit the state system.", "Switching costs are high.", "api"],
+        ["Lead change", "Leads staff through new workflows.", "Training load and change fatigue.", "cm,ai"],
+        ["Monitor results", "Tracks licensing time, stability, reunification and kin rates.", "Reports are assembled by hand.", "rpt"],
+        ["Report out", "Reports to the state, courts, funders and public.", "Numbers differ by source.", "rpt"]] },
+ { cat: "B", sub: "B2", n: "State CIO or IT", s: "i", why: "Owner of the legacy system implied by the overview",
+   day: "Owns the state's child welfare system, integrations, security and vendor relationships.",
+   pr: ["Legacy systems 20 to 30 years old", "Costly custom change requests", "Security and privacy exposure"],
+   st: [["Define needs", "Documents what the legacy system cannot do.", "Every change is a custom build.", "api"],
+        ["Evaluate vendors", "Reviews fit, security and integration approach.", "Hard to compare SaaS with a bespoke build.", "api"],
+        ["Integrate", "Connects the new tool to the system of record.", "Data mapping is slow and brittle.", "api,rpt"],
+        ["Secure and approve", "Reviews access, audit and security controls.", "Needs consistent roles and audit logs.", "api"],
+        ["Operate", "Monitors uptime, releases and support.", "Bespoke systems get fewer updates.", "none"]] },
+ { cat: "B", sub: "B2", n: "Procurement", s: "i", why: "RFP and budget cycle implied by the overview",
+   day: "Runs RFPs and contracts around budget cycles and compares SaaS with custom-build bids.",
+   pr: ["Long cycles", "RFPs written for custom builds", "Limited evidence of outcomes"],
+   st: [["Scope", "Writes requirements with program and IT leaders.", "Requirements copy the legacy system.", "none"],
+        ["Solicit", "Issues the RFP and gathers bids.", "Custom-build bids dominate.", "none"],
+        ["Evaluate", "Scores proposals on cost, risk and fit.", "Little comparable evidence of results.", "rpt"],
+        ["Contract", "Negotiates terms, pricing and data protections.", "Multi-year terms and change orders.", "none"],
+        ["Manage vendor", "Tracks deliverables and renewals.", "Little visibility into usage and outcomes.", "rpt"]] },
+ { cat: "B", sub: "B2", n: "Agency system administrator", s: "i", n2: 1, why: "Needed by the configure-not-rebuild model",
+   day: "Sets up users, roles, forms, workflows and templates for the agency, trains staff and handles access issues.",
+   pr: ["Policy changes force rework", "Complex permissions", "No safe place to test changes"],
+   st: [["Onboard agency", "Sets up organizations, teams and accounts.", "Role design is complex and agency specific.", "cfg"],
+        ["Configure", "Adapts forms, workflows and terms to state and county policy.", "Policy differs across states and counties.", "cfg"],
+        ["Train", "Trains staff and publishes guidance.", "Training competes with caseloads.", "cfg,ai"],
+        ["Support users", "Resets access and answers workflow questions.", "Issues bounce between agency and vendor.", "cfg"],
+        ["Adapt to change", "Updates configuration when law or policy changes.", "Changes need a vendor ticket.", "cfg,rpt"]] },
+ { cat: "B", sub: "B3", n: "Compliance and reporting analyst", s: "w", n2: 1, why: "Federal Reporting appears as a Binti module",
+   day: "Prepares federal and state reports, audits data quality and answers oversight requests.",
+   pr: ["Data re-keyed from many sources", "Definitions differ between reports", "Errors found after deadlines"],
+   st: [["Track requirements", "Follows federal and state reporting rules and dates.", "Requirements change and are read differently.", "rpt"],
+        ["Collect data", "Pulls data from systems and spreadsheets.", "Data lives in many places.", "rpt,api"],
+        ["Check quality", "Finds gaps and errors and chases workers to fix them.", "Fixes arrive after the deadline.", "rpt"],
+        ["Submit", "Files reports to state and federal bodies.", "Manual file formats.", "rpt,api"],
+        ["Support audits", "Supplies evidence of diligent efforts and timelines.", "Evidence is scattered across notes and email.", "rpt,cm"]] },
+ { cat: "C", sub: "C1", n: "Child or youth", s: "t", why: "Youth were interviewed during shadowing",
+   day: "Moves through care with changes of home, school and caseworker. Older youth prepare to leave care at 18 or 21.",
+   pr: ["Many moves", "Little say in decisions", "A cliff at aging out"],
+   st: [["Enter care", "Leaves home, often at short notice.", "Little information about what happens next.", "inv,plc"],
+        ["First placement", "Moves into a home, ideally with kin or siblings.", "Placed with strangers when a relative existed.", "plc,ffe"],
+        ["Stay connected", "Keeps up school, siblings and community.", "Records do not follow the child across moves.", "cm,plc"],
+        ["Have a say", "Takes part in planning and court.", "No youth-facing way to be heard.", "cm,gap"],
+        ["Prepare to leave", "Plans housing, school and income before 18 or 21.", "Transition planning starts late.", "cm,gap"]] },
+ { cat: "C", sub: "C1", n: "Birth parent", s: "i", why: "Reunification is goal two",
+   day: "Works through a case plan of services, visits and court dates while trying to keep or regain custody.",
+   pr: ["Confusing plans", "Transport and many appointments", "Little view of their own progress"],
+   st: [["Report or investigation", "Learns of the report and meets the investigator.", "Unsure of rights and next steps.", "inv"],
+        ["Receive plan", "Gets a case plan with services and visits.", "A document with little follow-through support.", "cm,prv"],
+        ["Complete services", "Attends services and visits.", "Referrals get lost.", "prv,cm"],
+        ["Show progress", "Shows progress to the caseworker and court.", "Progress is recorded inconsistently, and parents cannot see it.", "cm,gap"],
+        ["Reunify or move on", "Reunifies, or the goal changes.", "Support after reunification is thin.", "cm,prv"]] },
+ { cat: "C", sub: "C2", n: "Prospective foster or adoptive parent", s: "t", why: "Applies online, per the overview",
+   day: "Applies to foster or adopt, completes training, a home study and background checks, then waits.",
+   pr: ["Unclear process", "Long waits", "Repeated document requests"],
+   st: [["Inquire", "Finds the agency and starts an inquiry.", "The process is hard to understand.", "lic"],
+        ["Apply", "Completes the application on a phone.", "Paper forms and repeated entry.", "lic"],
+        ["Complete requirements", "Finishes checks, training and references.", "Unsure what is outstanding.", "lic,ai"],
+        ["Home study", "Hosts the home study and awaits approval.", "A long, unclear wait.", "lic"],
+        ["Get matched", "Begins fostering or adopting.", "Little guidance on a first placement.", "plc"]] },
+ { cat: "C", sub: "C2", n: "Licensed foster parent", s: "i", why: "Caregiver after licensing",
+   day: "Cares for a child daily, attends appointments and visits, and keeps the license current.",
+   pr: ["Relicensing paperwork", "Slow or wrong payments", "Thin information about the child"],
+   st: [["Stay licensed", "Relicenses each year.", "Resubmits documents already given.", "lic"],
+        ["Receive a placement call", "Gets a call about a child.", "Limited information on the child's needs.", "plc,ai"],
+        ["Care for the child", "Handles school, health and visits.", "Information arrives by phone or email.", "cm"],
+        ["Get paid and supported", "Receives payment and support services.", "Late or incorrect payments.", "elg,prv"],
+        ["Plan next steps", "Works with the team toward reunification or adoption.", "Little say in planning.", "cm"]] },
+ { cat: "C", sub: "C2", n: "Kin caregiver", s: "i", why: "Relative or friend who becomes the caregiver",
+   day: "A relative or family friend who takes a child, often suddenly, and must meet approval standards while caring for them.",
+   pr: ["Less preparation than licensed parents", "Financial strain", "Unclear approval steps"],
+   st: [["Learn of the child", "Hears that a child needs a home.", "Contacted late.", "ffe"],
+        ["Say yes", "Decides to take the child and meets the agency.", "Unclear requirements.", "ffe,plc"],
+        ["Get approved", "Completes checks and home requirements.", "The child is placed while approval is still running.", "lic"],
+        ["Receive support", "Applies for financial and service help.", "Fewer supports than licensed parents.", "elg,prv"],
+        ["Plan long term", "Works toward guardianship or adoption.", "The legal path is unclear.", "cm"]] },
+ { cat: "C", sub: "C3", n: "Notified relative", s: "i", n2: 1, why: "Recipient of family finding outreach",
+   day: "A relative or family friend contacted by the agency about a child entering care. Most are not expecting it, and some live far away or speak another language.",
+   pr: ["Unclear what is being asked", "Unsure of their rights", "May be reluctant or fearful"],
+   st: [["Receive notice", "Gets a letter, call or message.", "Notice is hard to understand or in the wrong language.", "ffe,ai"],
+        ["Understand options", "Learns the options: care, contact or support.", "Little explanation of what each means.", "ffe"],
+        ["Respond", "Replies and names other relatives.", "The response is not captured consistently.", "ffe"],
+        ["Be assessed", "Takes part in checks and interviews.", "Waits with no updates.", "ffe,lic"],
+        ["Stay in touch", "Continues contact or becomes a caregiver.", "The connection is not tracked over time.", "ffe,cm"]] },
+ { cat: "D", sub: "D1", n: "Judge", s: "w", n2: 1, why: "Role in every dependency case",
+   day: "Hears dependency cases, reviews reports and testimony, and decides on removal, placement, reunification and parental rights.",
+   pr: ["Reports arrive late and vary in format", "A lot to read in a short hearing", "Hard to verify efforts to find kin"],
+   st: [["Review reports", "Reads agency and advocate reports before the hearing.", "Reports arrive late and vary in format.", "gap"],
+        ["Hold hearing", "Hears the agency, parents, child's advocate and caregivers.", "Short time to cover a lot.", "gap"],
+        ["Check efforts", "Asks what was done to find relatives and offer services.", "Evidence of diligent efforts is hard to show.", "ffe,cm"],
+        ["Decide", "Orders placement, services or permanency steps.", "A decision based on a snapshot.", "gap"],
+        ["Review", "Sets and holds follow-up reviews.", "Orders are tracked outside the system.", "cm,gap"]] },
+ { cat: "D", sub: "D2", n: "Attorney or guardian ad litem", s: "w", n2: 1, why: "Represents parent, agency or child, by state",
+   day: "Represents the parent, the agency or the child, depending on the state, prepares for hearings and advises clients.",
+   pr: ["Records arrive in pieces", "Little time with clients", "Case plans are hard to check"],
+   st: [["Get appointed", "Is appointed or retained and gets the file.", "Records arrive in pieces, often late.", "gap"],
+        ["Review case", "Reads the plan, reports and history.", "Information sits in the agency system.", "gap"],
+        ["Meet client", "Meets the parent or child.", "Clients are hard to reach.", "none"],
+        ["Prepare", "Prepares arguments or recommendations.", "Little insight into service status.", "prv,cm"],
+        ["Appear", "Appears at hearings and follows up.", "Cannot easily check compliance with orders.", "gap"]] },
+ { cat: "D", sub: "D2", n: "CASA volunteer", s: "w", n2: 1, why: "Court-appointed trained volunteer",
+   day: "A trained volunteer who meets the child and others involved and gives the judge an independent view.",
+   pr: ["Limited access to information", "Coordinating many professionals", "Volunteer time"],
+   st: [["Get appointed", "Receives the assignment and background.", "A summary arrives in pieces.", "gap"],
+        ["Gather information", "Visits the child and speaks with caregivers, teachers and family.", "Cannot tell what other professionals have done.", "cm"],
+        ["Raise relatives", "Raises relatives and supports the child's connections.", "No shared view of kin work.", "ffe"],
+        ["Report to court", "Writes an independent report.", "Writing and formatting take volunteer hours.", "gap,ai"],
+        ["Follow through", "Tracks progress until closure.", "Little visibility into changes.", "gap"]] },
+ { cat: "E", sub: "E1", n: "Private agency worker", s: "w", n2: 1, why: "Contracted agencies are Binti customers",
+   day: "Works for a contracted agency that recruits and supports foster homes or provides placements, while the public agency stays responsible.",
+   pr: ["Duplicate entry into two systems", "Unclear data ownership", "Reporting to several parties"],
+   st: [["Recruit homes", "Recruits and licenses homes for the contract.", "Separate applications and tools from the public agency.", "lic"],
+        ["Receive referrals", "Receives placement requests.", "Requests arrive by phone and email.", "plc"],
+        ["Place and support", "Places the child and supports the caregiver.", "Support notes stay in their own systems.", "cm,plc"],
+        ["Report to agency", "Sends reports to the public agency.", "Re-enters the same data.", "rpt,api"],
+        ["Invoice", "Bills for care and services.", "Reconciles against placement records.", "elg"]] },
+ { cat: "E", sub: "E1", n: "Community service provider", s: "w", n2: 1, why: "Closed-loop referrals are a Binti module",
+   day: "Delivers services such as counseling, parenting classes, housing or treatment to families the agency refers.",
+   pr: ["Referrals arrive by email or fax", "No feedback loop", "Hard to show outcomes to funders"],
+   st: [["Receive referral", "Gets a referral from a worker.", "Missing details, sent by email or fax.", "prv"],
+        ["Contact family", "Reaches out and schedules.", "The family is hard to reach.", "prv"],
+        ["Deliver service", "Provides the service.", "Attendance is not shared back.", "prv"],
+        ["Report back", "Tells the agency whether the family engaged.", "Reports by phone or email.", "prv,rpt"],
+        ["Bill and report", "Bills the agency and reports outcomes.", "Billing and outcomes sit apart.", "rpt"]] },
+ { cat: "E", sub: "E2", n: "Indigenous governing body representative", s: "w", n2: 1, why: "Tribes, First Nations and Aboriginal bodies hold authority over their children",
+   day: "Represents a tribe, First Nation or community in cases involving its children, receives notice, consults and may take over services.",
+   pr: ["Notice arrives late", "Information shared outside community channels", "Placement preferences are hard to verify"],
+   st: [["Receive notice", "Gets notice that a child from the community is involved.", "Notice arrives late or by mail.", "gap"],
+        ["Consult", "Confirms the child's membership and consults on the plan.", "Little shared case information.", "gap,cm"],
+        ["Identify kin", "Helps identify family and community caregivers.", "Kin search lacks cultural knowledge.", "ffe"],
+        ["Review placement", "Checks whether placement follows the preference order.", "Preference order is hard to audit.", "plc,gap"],
+        ["Stay involved", "Stays involved through permanency and may take on services.", "Shared records and agreements are managed by hand.", "cm,gap"]] }
+];
+
+var MOD = {}; MODS.forEach(function (m) { MOD[m.id] = m; });
+var CAT = {}; CATS.forEach(function (c) { CAT[c.id] = c; });
+var SRC = { t: "Binti overview", w: "Web research", i: "Inferred" };
+function chipFor(id) {
+  if (id === "gap") return "<span class='chip gap'>Possible gap</span>";
+  if (id === "none") return "<span class='chip none'>Outside product</span>";
+  return "<span class='chip'>" + MOD[id].short + "</span>";
+}
+P.forEach(function (p) {
+  p.st = p.st.map(function (s) { return { n: s[0], a: s[1], p: s[2], m: s[3].split(",") }; });
+});
+function personaModules(p) {
+  var seen = {};
+  p.st.forEach(function (s) { s.m.forEach(function (m) { if (m !== "gap" && m !== "none") seen[m] = 1; }); });
+  return Object.keys(seen);
+}
+/* Priority personas. ts = how the stage feels today, ps = intended feeling with the product, scale -2 to 2. ns = needs a surface not described on Binti's site. */
+var PRI = [
+ { name: "Caseworker", cat: "Daily operators",
+   why: "Social workers are the first priority, and their work should feel rewarding. Caseworkers carry the biggest administrative load and touch the most modules, so time given back here helps every other team. This journey follows one case from the first day to close, with reward moments built in.",
+   pr: ["Enter it once. What a worker says or records in the field should flow into notes, plans, court reports and state reporting.",
+        "Reward with time and progress. Show the hours handed back and the steps completed for each family. Keep scores and rankings away from anything about a child's outcome.",
+        "Keep the worker in charge. AI drafts, and the worker reviews and signs."],
+   extra: { t: "Reward moments to design in", items: [
+     "Time back: a weekly view of minutes saved per visit note and per court report.",
+     "Progress made visible: relatives found, services started and plan steps completed for each family.",
+     "Milestones: a quiet marker when a child is placed with kin, a family is reunified or a case closes at permanency, shared with the supervisor.",
+     "Specific recognition: a prompt for supervisors to acknowledge named work, such as a thorough kin search.",
+     "Avoid points, streaks and rankings tied to child outcomes."] },
+   st: [
+    { n: "Start the day", g: "Know what matters today.", fr: "Builds the day from spreadsheets, sticky notes and email.", fl: "Scattered", ts: -1, ps: 1, ns: 1,
+      pd: "A My day view lists today's visits, court dates, overdue tasks and referrals awaiting a reply, ordered by urgency, with one tap to open the family.", m: "cm,prv", sg: "Minutes to plan the day, overdue tasks" },
+    { n: "Accept a new case", g: "Understand the family before the first visit.", fr: "The handoff packet is thin or scattered, and history sits in other systems.", fl: "Uneasy", ts: -1, ps: 1,
+      pd: "A case summary pulls together prior reports, investigation findings, the family network found so far and open questions, with a note from the supervisor.", m: "cm,int,inv,ffe", sg: "Questions re-asked of the family or colleagues" },
+    { n: "Build the plan with the family", g: "Agree goals and services the family will use.", fr: "Plans live in documents and referrals go out by email.", fl: "Slowed down", ts: 0, ps: 1,
+      pd: "A guided plan turns goals into dated tasks. Referrals go to providers from the plan, and their status comes back to the caseworker.", m: "cm,prv", sg: "Plans completed on time, referrals confirmed" },
+    { n: "Visit and capture", g: "Spend the visit with the family, not the keyboard.", fr: "Notes are written in the field and again in the system.", fl: "Behind", ts: -1, ps: 2,
+      pd: "Record the visit and Binti AI drafts the note and form fields for the worker to review and sign. Design for patchy signal in the field (to confirm).", m: "cm,ai", sg: "Minutes from visit to finished note" },
+    { n: "Find and engage kin", g: "Find a relative who can care for the child.", fr: "Searches run across separate tools, trees are drawn by hand and outreach is tracked by hand.", fl: "Frustrated", ts: -1, ps: 2,
+      pd: "Search records, see a genogram that updates itself, send templated outreach in the relative's language and see who has responded, all on the child's record.", m: "ffe,ai", sg: "Relatives identified and responding" },
+    { n: "Prepare for court", g: "Give the court a clear, accurate report.", fr: "Facts are pulled from many places the night before.", fl: "Pressured", ts: -2, ps: 0,
+      pd: "A court report drafts itself from visit notes, plan progress, services and kin efforts. The worker edits and approves, and efforts to find relatives are already documented.", m: "cm,ffe,ai", sg: "Hours to prepare a report" },
+    { n: "Reach permanency and close", g: "Finish well and move on.", fr: "Closing data and reports are re-entered, and nothing marks the outcome.", fl: "Drained", ts: 0, ps: 2,
+      pd: "A closing checklist pre-fills from the case, compliance data has been captured as the work happened, and the case shows its outcome, such as a child placed with kin, to the worker and supervisor.", m: "cm,rpt", sg: "Time to close, data corrections" }
+   ] },
+ { name: "Prospective foster or adoptive parent", cat: "People served and caregivers",
+   why: "New parents applying for a license are the second priority. They are the supply of homes, so every delay here is a child waiting longer. The whole journey sits in the licensing module, which makes it the clearest place to start.",
+   pr: ["Always show where the family is, what is left and what happens next.",
+        "Ask once. Reuse everything the family has already given.",
+        "Mobile first, plain language, and in the family's own language."],
+   st: [
+    { n: "Explore", g: "Decide whether to foster or adopt, and what it takes.", fr: "The process is hard to understand and the timeline is unclear.", fl: "Curious, unsure", ts: 0, ps: 1, ns: 1,
+      pd: "A plain-language page shows the steps, a typical timeline and what each step asks of the family, with a clear way to start on a phone.", m: "lic", sg: "Visitors who start an inquiry" },
+    { n: "Inquire", g: "Get a person and a next step.", fr: "Finds the agency, submits an inquiry, then waits.", fl: "Waiting", ts: -1, ps: 1,
+      pd: "A short inquiry captures the basics and routes to a named worker, with an acknowledgement and the next step.", m: "lic", sg: "Time to first response" },
+    { n: "Apply", g: "Finish the application without starting over.", fr: "Paper forms and repeated entry.", fl: "Frustrated", ts: -1, ps: 1,
+      pd: "A mobile application saves as the family goes, resumes on any device and shows progress. What is entered once feeds every later form.", m: "lic,ai", sg: "Completion rate, time to submit" },
+    { n: "Complete requirements", g: "Know exactly what is outstanding.", fr: "Unsure what is outstanding, and documents are requested again.", fl: "Anxious", ts: -2, ps: 1,
+      pd: "A checklist shows consents, background checks, references and training with their status. References are requested automatically.", m: "lic,api", sg: "Document requests per family" },
+    { n: "Home study", g: "Prepare for the visit and get through it.", fr: "The family does not know in advance what the visit checks (to validate).", fl: "Nervous", ts: -1, ps: 1,
+      pd: "A booking step and a checklist of what the visit covers. The worker completes the forms digitally during the visit, with a draft from Binti AI.", m: "lic,ai", sg: "Days from booking to completed study" },
+    { n: "Approval and wait", g: "Know when a decision will come.", fr: "A long, unclear wait with little visibility.", fl: "Left waiting", ts: -2, ps: 0,
+      pd: "Status shows where the application sits, what remains and an expected timeframe. The approval notice arrives with the next steps.", m: "lic", sg: "Status enquiries by phone, days to approval" },
+    { n: "Get matched", g: "Start with confidence.", fr: "Little guidance on a first placement.", fl: "Uncertain", ts: 0, ps: 2,
+      pd: "Preferences and capacity go to placement. The family gets a placement call that describes the child's needs in plain terms, and a named contact for the first weeks.", m: "lic,plc,ai", sg: "Placements accepted, support contacts in month one" }
+   ] },
+ { name: "Kin caregiver", cat: "People served and caregivers",
+   why: "The third priority is a persona with a lot of friction today. Kin caregivers hit problems at every stage, from the first call to the long-term plan, and placing children with kin is a stated goal of the platform. Most of the fix uses modules that already exist.",
+   pr: ["Start from the shock. The first contact is often a surprise, so explain it plainly and in their language.",
+        "Show what is needed now and what can wait.",
+        "Treat them as caregivers who need support, not only as applicants."],
+   st: [
+    { n: "The first contact", g: "Understand why they are being contacted.", fr: "Contacted late. The notice is hard to understand or in the wrong language.", fl: "Shocked", ts: -2, ps: 0,
+      pd: "Outreach in the relative's language explains who is asking, why, and what the options are, and gives a person to talk to.", m: "ffe,ai", sg: "Response rate, time to response" },
+    { n: "Weigh the decision", g: "Know what saying yes involves.", fr: "Requirements are unclear and each option is poorly explained.", fl: "Overwhelmed", ts: -2, ps: 0, ns: 1,
+      pd: "A short guide sets out the options (care, contact, support), the approval steps, the financial help available and the legal paths, in plain terms.", m: "ffe", sg: "Questions put to the worker" },
+    { n: "Say yes", g: "Get the child safely into their care.", fr: "The child may be placed while approval is still running.", fl: "Stretched", ts: -2, ps: 0,
+      pd: "Shows what is required now and what can follow, and records the response in the child's family network. Rules for placing before approval vary by jurisdiction.", m: "ffe,plc", sg: "Time from yes to placement" },
+    { n: "Get approved", g: "Complete approval without repeating themselves.", fr: "Checks and home requirements start from zero.", fl: "Anxious", ts: -1, ps: 1,
+      pd: "Information already gathered in family finding carries into the approval steps, with a checklist and status the caregiver can see.", m: "lic,ffe", sg: "Days to approval, repeated requests" },
+    { n: "The first weeks", g: "Get money and services in place.", fr: "Fewer supports than licensed parents, and financial strain.", fl: "Strained", ts: -2, ps: 0, ns: 1,
+      pd: "One list of what the caregiver can apply for (financial help, services, supports), with applications started from what the agency already knows and a named contact.", m: "elg,prv", sg: "Time to first payment, supports in use" },
+    { n: "Everyday care", g: "Handle school, health, visits and court.", fr: "Information arrives by phone or email.", fl: "Stretched", ts: -1, ps: 1, ns: 1,
+      pd: "A caregiver view with the child's appointments, visits, court dates and contacts.", m: "cm", sg: "Missed appointments, calls to the worker" },
+    { n: "Plan the long term", g: "Understand and choose a permanent path.", fr: "The legal path to guardianship or adoption is unclear.", fl: "Uncertain", ts: -1, ps: 1, ns: 1,
+      pd: "Options explained with next steps and who to talk to, linked to the case plan.", m: "cm", sg: "Caregivers with a documented permanency plan" }
+   ] }
+];
+/*RENDER*/
+function tag(p) {
+  return "<span class='chip none'>" + SRC[p.s] + "</span>" + (p.n2 ? " <span class='chip new'>New</span>" : "");
+}
+function catHead(c) {
+  return "<div class='cathead tint t-" + c.id.toLowerCase() + "'><span class='dot' style='background:var(--" + c.c + ")'></span><h3>" + c.name + "</h3></div>";
+}
+var activeCat = "A";
+function tabBar() {
+  return "<div class='tabs' role='tablist' aria-label='Persona categories'>" + CATS.map(function (c) {
+    var n = P.filter(function (p) { return p.cat === c.id; }).length;
+    return "<button type='button' role='tab' class='tab t-" + c.id.toLowerCase() + "' data-cat='" + c.id + "'><span class='dot' style='background:var(--" + c.c + ")'></span>" + c.name + "<span class='tabn'>" + n + "</span></button>";
+  }).join("") + "</div>";
+}
+function panelOpen(c) { return "<div class='tabpanel catblock t-" + c.id.toLowerCase() + "' role='tabpanel' data-cat='" + c.id + "'>"; }
+function setCat(id) {
+  activeCat = id;
+  document.querySelectorAll(".tab").forEach(function (b) {
+    var on = b.dataset.cat === id;
+    b.classList.toggle("on", on);
+    b.setAttribute("aria-selected", on ? "true" : "false");
+    b.tabIndex = on ? 0 : -1;
+  });
+  document.querySelectorAll(".tabpanel").forEach(function (el) { el.hidden = el.dataset.cat !== id; });
+}
+document.addEventListener("click", function (e) {
+  var b = e.target.closest ? e.target.closest(".tab") : null;
+  if (b) setCat(b.dataset.cat);
+});
+document.addEventListener("keydown", function (e) {
+  var b = e.target.closest ? e.target.closest(".tab") : null;
+  if (!b) return;
+  var d = e.key === "ArrowRight" ? 1 : (e.key === "ArrowLeft" ? -1 : 0);
+  if (!d) return;
+  var ids = CATS.map(function (c) { return c.id; });
+  var next = ids[(ids.indexOf(b.dataset.cat) + d + ids.length) % ids.length];
+  setCat(next);
+  var nb = b.parentNode.querySelector(".tab[data-cat='" + next + "']");
+  if (nb) nb.focus();
+  e.preventDefault();
+});
+function renderPersonas() {
+  var h = tabBar();
+  CATS.forEach(function (c) {
+    h += panelOpen(c);
+    c.subs.forEach(function (s) {
+      var list = P.filter(function (p) { return p.sub === s.id; });
+      h += "<div class='sub'><span class='mono'>" + s.name + "</span><div class='pgrid'>";
+      list.forEach(function (p) {
+        h += "<div class='pcard tint t-" + p.cat.toLowerCase() + "'><b>" + p.n + "</b><div>" + tag(p) + "</div><span class='why'>" + p.why + "</span></div>";
+      });
+      h += "</div></div>";
+    });
+    h += "</div>";
+  });
+  document.getElementById("personaList").innerHTML = h;
+}
+function renderJourneys() {
+  var h = tabBar();
+  CATS.forEach(function (c) {
+    h += panelOpen(c) + "<div class='card tint'><h4>The problem for this group</h4><p>" + c.prob + "</p></div>";
+    c.subs.forEach(function (s) {
+      h += "<div class='sub'><span class='mono'>" + s.name + "</span><p class='small muted'>" + s.prob + "</p>";
+      P.filter(function (p) { return p.sub === s.id; }).forEach(function (p) {
+        h += "<details class='persona t-" + p.cat.toLowerCase() + "'><summary><b>" + p.n + "</b>" + tag(p) + "<span class='small muted'>" + personaModules(p).length + " modules</span></summary><div class='pbody'>";
+        h += "<p>" + p.day + "</p><div><span class='mono'>Problems</span><ul class='tight'>" + p.pr.map(function (x) { return "<li>" + x + "</li>"; }).join("") + "</ul></div>";
+        h += "<span class='mono'>Journey</span><div class='steps'>";
+        p.st.forEach(function (st, i) {
+          h += "<div class='step'><span class='l'>Step " + (i + 1) + "</span><b>" + st.n + "</b><span>" + st.a + "</span><span class='muted'><span class='l'>Pain</span>" + st.p + "</span><div class='chips'>" + st.m.map(chipFor).join("") + "</div></div>";
+        });
+        h += "</div></div></details>";
+      });
+      h += "</div>";
+    });
+    h += "</div>";
+  });
+  document.getElementById("journeyList").innerHTML = h;
+}
+function renderModules() {
+  var h = "";
+  MODS.forEach(function (m) {
+    var ps = 0, steps = 0;
+    P.forEach(function (p) {
+      var hit = 0;
+      p.st.forEach(function (s) { if (s.m.indexOf(m.id) > -1) { steps++; hit = 1; } });
+      ps += hit;
+    });
+    var cls = m.st === "live" ? "chip" : (m.st === "demo" ? "chip demo" : "chip none");
+    h += "<div class='card tint mcard " + (m.st === "live" ? "t-acc" : (m.st === "demo" ? "t-demo" : "")) + "'><h3>" + m.name + "</h3><div class='chips'><span class='" + cls + "'>" + m.stt + "</span><span class='chip none'>" + (m.grp === "core" ? "Core module" : "Platform") + "</span></div><p>" + m.d + "</p><p class='small muted'>" + ps + " of " + P.length + " personas, " + steps + " journey steps</p></div>";
+  });
+  document.getElementById("moduleList").innerHTML = h;
+}
+var COLS = MODS.map(function (m) { return m.id; }).concat(["gap"]);
+function stepsFor(pi, col) {
+  return P[pi].st.map(function (s, i) { return { s: s, i: i }; }).filter(function (x) { return x.s.m.indexOf(col) > -1; });
+}
+function renderMatrix() {
+  var h = "<thead><tr><th>Persona</th>";
+  COLS.forEach(function (c) { h += "<th class='c' title='" + (c === "gap" ? "Possible gap" : MOD[c].name) + "'>" + (c === "gap" ? "Gap" : MOD[c].short) + "</th>"; });
+  h += "</tr></thead><tbody>";
+  CATS.forEach(function (c) {
+    h += "<tr class='grp'><td colspan='" + (COLS.length + 1) + "' style='--c:var(--" + c.c + ");--cs:var(--" + c.c + "-soft)'>" + c.name + "</td></tr>";
+    P.forEach(function (p, pi) {
+      if (p.cat !== c.id) return;
+      h += "<tr><td class='pn'>" + p.n + "</td>";
+      COLS.forEach(function (col) {
+        var k = stepsFor(pi, col).length;
+        h += "<td class='c'><button type='button' class='cell" + (col === "gap" ? " g" : "") + "' style='--k:" + k + "' data-k='" + k + "' data-p='" + pi + "' data-c='" + col + "' aria-label='" + p.n + ", " + (col === "gap" ? "gap" : MOD[col].name) + ", " + k + " steps'>" + (k || "") + "</button></td>";
+      });
+      h += "</tr>";
+    });
+  });
+  h += "</tbody>";
+  var m = document.getElementById("matrix");
+  m.innerHTML = h;
+  m.addEventListener("click", function (e) {
+    var b = e.target.closest(".cell"); if (!b || b.dataset.k === "0") return;
+    m.querySelectorAll(".cell.sel").forEach(function (x) { x.classList.remove("sel"); });
+    b.classList.add("sel");
+    var pi = +b.dataset.p, col = b.dataset.c, items = stepsFor(pi, col);
+    var title = P[pi].n + " and " + (col === "gap" ? "possible gaps" : MOD[col].name);
+    document.getElementById("cellDetail").innerHTML = "<h4>" + title + "</h4><ul class='tight'>" + items.map(function (x) { return "<li><b>Step " + (x.i + 1) + ", " + x.s.n + ".</b> " + x.s.a + " <span class='muted'>Pain: " + x.s.p + "</span></li>"; }).join("") + "</ul>";
+  });
+}
+function renderStats() {
+  var total = 0, gap = 0, none = 0;
+  P.forEach(function (p) { p.st.forEach(function (s) {
+    total++;
+    if (s.m.indexOf("gap") > -1) gap++;
+    if (s.m.length === 1 && s.m[0] === "none") none++;
+  }); });
+  var best = null, bn = 0;
+  MODS.forEach(function (m) { var n = P.filter(function (p) { return personaModules(p).indexOf(m.id) > -1; }).length; if (n > bn) { bn = n; best = m; } });
+  var unl = {};
+  P.forEach(function (p) { personaModules(p).forEach(function (id) { if (MOD[id].st === "demo") unl[p.n] = 1; }); });
+  document.getElementById("stats").innerHTML =
+    "<div class='stat tint t-a'><b>" + P.length + "</b>personas, " + total + " journey steps</div>" +
+    "<div class='stat tint t-gap'><b>" + gap + "</b>steps with a possible gap</div>" +
+    "<div class='stat tint t-b'><b>" + bn + "</b>personas use " + best.name.split(" and ")[0] + ", the most of any module</div>" +
+    "<div class='stat tint t-c'><b>" + Object.keys(unl).length + "</b>personas depend on a module not yet launched</div>";
+}
+function renderGaps() {
+  var h = "";
+  P.forEach(function (p) {
+    var g = p.st.filter(function (s) { return s.m.indexOf("gap") > -1; });
+    if (!g.length) return;
+    h += "<div class='card tint t-gap'><h4>" + p.n + "</h4><ul class='tight'>" + g.map(function (s) { return "<li><b>" + s.n + ".</b> " + s.p + "</li>"; }).join("") + "</ul></div>";
+  });
+  document.getElementById("gapList").innerHTML = h;
+}
+function mood(v) { return v > 0 ? "p" : (v < 0 ? "n" : "z"); }
+function moodWord(v) { return v > 0 ? "Positive" : (v < 0 ? "Negative" : "Neutral"); }
+function faceSvg(cx, cy, r, v, line) {
+  var k = mood(v), e = r * 0.34, ey = cy - r * 0.2, my = cy + r * 0.38, mw = r * 0.5, mouth;
+  if (k === "p") mouth = "M" + (cx - mw) + " " + my + " Q" + cx + " " + (my + r * 0.55) + " " + (cx + mw) + " " + my;
+  else if (k === "n") mouth = "M" + (cx - mw) + " " + (my + r * 0.2) + " Q" + cx + " " + (my - r * 0.4) + " " + (cx + mw) + " " + (my + r * 0.2);
+  else mouth = "M" + (cx - mw) + " " + my + " L" + (cx + mw) + " " + my;
+  return "<g class='face f-" + k + " " + line + "'><title>" + moodWord(v) + "</title><circle class='fc' cx='" + cx + "' cy='" + cy + "' r='" + r + "'/><circle class='fe' cx='" + (cx - e) + "' cy='" + ey + "' r='" + (r * 0.11) + "'/><circle class='fe' cx='" + (cx + e) + "' cy='" + ey + "' r='" + (r * 0.11) + "'/><path class='fm' d='" + mouth + "'/></g>";
+}
+function faceHtml(v, line) {
+  return "<svg class='faceb' viewBox='0 0 24 24' width='24' height='24' role='img' aria-label='" + moodWord(v) + "'>" + faceSvg(12, 12, 10.5, v, line) + "</svg>";
+}
+function wrapLabel(t, n) {
+  var w = t.split(" "), l = [], c = "";
+  w.forEach(function (x) { if ((c + " " + x).trim().length > n && c) { l.push(c); c = x; } else { c = (c + " " + x).trim(); } });
+  if (c) l.push(c);
+  return l.slice(0, 3);
+}
+function curveSvg(st) {
+  var n = st.length, W = 800, H = 205, x0 = 80, x1 = 745;
+  function X(i) { return x0 + i * (x1 - x0) / (n - 1); }
+  function Y(v) { return 80 - v * 30; }
+  function path(k) { return st.map(function (s, i) { return (i ? "L" : "M") + X(i) + " " + Y(s[k]); }).join(" "); }
+  var s = "<svg viewBox='0 0 " + W + " " + H + "' role='img' aria-label='How each stage feels today compared with the intended experience'>";
+  [-2, -1, 0, 1, 2].forEach(function (v) { s += "<line class='" + (v === 0 ? "cv-mid" : "cv-grid") + "' x1='" + x0 + "' x2='" + x1 + "' y1='" + Y(v) + "' y2='" + Y(v) + "'/>"; });
+  s += "<text class='cv-l' x='6' y='" + (Y(2) + 4) + "'>Positive</text><text class='cv-l' x='6' y='" + (Y(0) + 4) + "'>Neutral</text><text class='cv-l' x='6' y='" + (Y(-2) + 4) + "'>Negative</text>";
+  s += "<path class='cv-today' d='" + path("ts") + "'/><path class='cv-prod' d='" + path("ps") + "'/>";
+  st.forEach(function (x, i) { s += faceSvg(X(i), Y(x.ts), 9, x.ts, "ln-t"); });
+  st.forEach(function (x, i) { s += faceSvg(X(i), Y(x.ps), 12, x.ps, "ln-p"); });
+  st.forEach(function (x, i) {
+    wrapLabel(x.n, 17).forEach(function (line, j) { s += "<text class='cv-s' x='" + X(i) + "' y='" + (168 + j * 13) + "'>" + line + "</text>"; });
+  });
+  return s + "</svg>";
+}
+function renderPriority() {
+  var h = "";
+  PRI.forEach(function (p, k) {
+    var ct = CATS.filter(function (c) { return c.name === p.cat; })[0];
+    h += "<div class='catblock t-" + ct.id.toLowerCase() + "'><div class='pri-head tint'><h3>" + p.name + "</h3><span class='chip'>Priority " + (k + 1) + "</span><span class='chip none'>" + p.cat + "</span></div>";
+    h += "<p>" + p.why + "</p>";
+    h += "<div class='card tint'><h4>Design principles</h4><ul class='tight'>" + p.pr.map(function (x) { return "<li>" + x + "</li>"; }).join("") + "</ul></div>";
+    h += "<div class='legend'><span><i style='background:var(--gap)'></i>Today</span><span><i style='background:var(--accent)'></i>With the product</span><span>" + faceHtml(1, "ln-p") + "Positive</span><span>" + faceHtml(0, "ln-p") + "Neutral</span><span>" + faceHtml(-1, "ln-p") + "Negative</span></div>";
+    h += "<div class='curve'>" + curveSvg(p.st) + "</div><div class='rows'>";
+    p.st.forEach(function (s) {
+      h += "<div class='row'>" +
+        "<div class='stage'><span class='l'>Stage</span><b>" + s.n + "</b><p class='small muted'>" + s.g + "</p>" + (s.ns ? "<span class='chip demo'>New surface</span>" : "") + "</div>" +
+        "<div><span class='l'>Today</span><div class='fl'>" + faceHtml(s.ts, "ln-t") + "<span class='chip gap'>" + s.fl + "</span></div><p class='small'>" + s.fr + "</p></div>" +
+        "<div><span class='l'>In the product</span><div class='fl'>" + faceHtml(s.ps, "ln-p") + "<span class='small muted'>" + moodWord(s.ps) + " target</span></div><p>" + s.pd + "</p></div>" +
+        "<div><span class='l'>Serves</span><div class='chips'>" + s.m.split(",").map(chipFor).join("") + "</div><p class='small muted'>Signal: " + s.sg + "</p></div></div>";
+    });
+    h += "</div>";
+    if (p.extra) h += "<div class='card tint t-acc'><h4>" + p.extra.t + "</h4><ul class='tight'>" + p.extra.items.map(function (x) { return "<li>" + x + "</li>"; }).join("") + "</ul></div>";
+    h += "</div>";
+  });
+  document.getElementById("priorityList").innerHTML = h;
+}
+renderPersonas(); renderJourneys(); renderModules(); renderMatrix(); renderStats(); renderGaps(); renderPriority(); setCat("A");
+
+document.getElementById("openAll").addEventListener("click", function () { document.querySelectorAll("details.persona").forEach(function (d) { d.open = true; }); });
+document.getElementById("closeAll").addEventListener("click", function () { document.querySelectorAll("details.persona").forEach(function (d) { d.open = false; }); });
+(function () {
+  var links = document.querySelectorAll("#nav a");
+  if (!("IntersectionObserver" in window)) return;
+  var io = new IntersectionObserver(function (es) {
+    es.forEach(function (e) {
+      if (e.isIntersecting) links.forEach(function (a) { a.classList.toggle("on", a.getAttribute("href") === "#" + e.target.id); });
+    });
+  }, { rootMargin: "-20% 0px -70% 0px" });
+  document.querySelectorAll("main section").forEach(function (s) { io.observe(s); });
+})();
+</script>
+
+</body>
+</html>
