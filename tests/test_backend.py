@@ -277,3 +277,31 @@ class TestLiveModeWithFakeDeepSeek(Base):
         tool_msgs = [m for m in calls[1]["messages"] if m["role"] == "tool"]
         self.assertIn("on_date", tool_msgs[0]["content"])
         self.assertIn("scoped to case-01", tool_msgs[1]["content"])  # cross-case read refused
+
+
+class TestConcurrency(unittest.TestCase):
+    """Vercel serves requests in parallel; the case list and briefing load at the same time."""
+
+    def test_parallel_requests_on_a_file_database(self):
+        import tempfile
+        import threading
+        path = os.path.join(tempfile.mkdtemp(), "conc.db")
+        db.reset_for_tests(path)
+        try:
+            errors = []
+
+            def hit(p, u):
+                env = {"REQUEST_METHOD": "GET", "PATH_INFO": p, "QUERY_STRING": "", "CONTENT_LENGTH": "0",
+                       "wsgi.input": io.BytesIO(b""), "HTTP_X_PERSONA": "caseworker", "HTTP_X_USER": u}
+                st = {}
+                b"".join(app(env, lambda s, h: st.setdefault("s", s)))
+                if not st["s"].startswith("200"):
+                    errors.append((p, st["s"]))
+
+            ts = [threading.Thread(target=hit, args=(p, u)) for _ in range(8)
+                  for p in ("/api/cases", "/api/briefing") for u in ("cw1", "cw2", "cw3")]
+            [t.start() for t in ts]
+            [t.join() for t in ts]
+            self.assertEqual(errors, [])
+        finally:
+            db.reset_for_tests(":memory:")

@@ -10,8 +10,10 @@ import threading
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-_lock = threading.Lock()
-_conn = None
+_seed_lock = threading.Lock()
+_local = threading.local()   # one connection per thread: sqlite3 connections must not be shared across threads
+_shared = None               # used only for ":memory:" (tests), which is single-threaded
+_generation = 0              # bumped by reset_for_tests so threads drop stale connections
 
 
 def db_path() -> str:
@@ -22,31 +24,48 @@ def db_path() -> str:
     return str(ROOT / "data" / "binti.db")
 
 
+def _open(path):
+    conn = sqlite3.connect(path, timeout=15, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute("PRAGMA busy_timeout = 15000")
+    return conn
+
+
 def connect() -> sqlite3.Connection:
-    """One shared connection per process, seeded on first use."""
-    global _conn
-    with _lock:
-        if _conn is None:
-            path = db_path()
-            if path != ":memory:":
-                Path(path).parent.mkdir(parents=True, exist_ok=True)
-            conn = sqlite3.connect(path, check_same_thread=False)
-            conn.row_factory = sqlite3.Row
-            conn.execute("PRAGMA foreign_keys = ON")
-            if not _is_seeded(conn):
-                from . import seed
-                seed.seed(conn)
-            _conn = conn
-        return _conn
+    """Return this thread's connection, seeding the database once per file."""
+    global _shared
+    path = db_path()
+    if path == ":memory:":
+        with _seed_lock:
+            if _shared is None:
+                _shared = _open(path)
+                if not _is_seeded(_shared):
+                    from . import seed
+                    seed.seed(_shared)
+        return _shared
+    conn = getattr(_local, "conn", None)
+    if conn is not None and getattr(_local, "gen", None) == (_generation, path):
+        return conn
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    with _seed_lock:  # only one thread seeds; the others wait and then see a seeded file
+        conn = _open(path)
+        if not _is_seeded(conn):
+            conn.execute("PRAGMA journal_mode = WAL")
+            from . import seed
+            seed.seed(conn)
+    _local.conn, _local.gen = conn, (_generation, path)
+    return conn
 
 
 def reset_for_tests(path=":memory:"):
     """Point the module at a fresh database (used by tests)."""
-    global _conn
-    with _lock:
-        if _conn is not None:
-            _conn.close()
-        _conn = None
+    global _shared, _generation
+    with _seed_lock:
+        if _shared is not None:
+            _shared.close()
+        _shared = None
+        _generation += 1
     os.environ["BINTI_DB"] = path
     return connect()
 
@@ -69,7 +88,6 @@ def row(sql, args=()):
 
 def execute(sql, args=()):
     conn = connect()
-    with _lock:
-        cur = conn.execute(sql, args)
-        conn.commit()
-        return cur.lastrowid
+    cur = conn.execute(sql, args)
+    conn.commit()
+    return cur.lastrowid
