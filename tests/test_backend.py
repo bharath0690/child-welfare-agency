@@ -305,3 +305,27 @@ class TestConcurrency(unittest.TestCase):
             self.assertEqual(errors, [])
         finally:
             db.reset_for_tests(":memory:")
+
+
+class TestCaseloadChat(Base):
+    def test_routes_to_named_child_and_tags_case(self):
+        out = agent.chat(self.cw, "caseload", None, "What did Jaylen say about his grandma?")
+        self.assertIn("Grandma Denise", out["reply"])
+        self.assertEqual([r["case_id"] for r in out["meta"]["case_refs"]], ["case-01"])
+
+    def test_memory_goes_to_one_case_only(self):
+        agent.chat(self.cw, "caseload", None, "Remember that Sofia likes drawing")
+        self.assertEqual(agent.memory(("case", "case-02")), ["Sofia likes drawing"])
+        self.assertFalse(agent.memory(("case", "case-01")))
+        self.assertFalse(agent.memory(("caseload", "cw1")))
+
+    def test_child_outside_caseload_is_not_read(self):
+        out = agent.chat(self.cw, "caseload", None, "Tell me about Mateo")
+        self.assertIn("don't see", out["reply"])
+        self.assertNotIn("robotics", out["reply"])
+
+    def test_home_cards_have_urgency_levels(self):
+        p = agent.open_panel(self.cw, "caseload", None)
+        self.assertTrue(p["cards"])
+        self.assertTrue({c["level"] for c in p["cards"]} <= {"urgent", "soon", "routine"})
+        self.assertEqual(p["cards"][0]["level"], "urgent")

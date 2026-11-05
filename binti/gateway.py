@@ -209,7 +209,10 @@ def t_notes_search(ident, a):
         score = sum(1.0 / df[w] for w in q if df[w] and w in c["text"].lower())
         if score:
             scored.append((-score, i, c))
-    return [c for _, _, c in sorted(scored)[:12]]
+    if not scored:
+        return []
+    best = -min(scored)[0]
+    return [c for sc, _, c in sorted(scored) if -sc >= best * 0.5][:12]
 
 
 def t_referrals_list(ident, a):
