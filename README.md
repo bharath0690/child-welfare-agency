@@ -18,6 +18,9 @@ python3 dev.py --reseed   # rebuild the SQLite database from binti/seed.py
 ```bash
 python3 -m unittest discover -s tests -v
 ```
+```bash
+python3 evals/run_evals.py      # 25-case golden eval set (see evals/README.md)
+```
 You need Python 3.10 or later. There's nothing to install: the backend uses only the standard library.
 
 ## Turn on the live model (DeepSeek)
@@ -54,6 +57,7 @@ binti/
 AGENTS.md                          core agent + three persona profiles (tone, emotional states, tools)
 skills/<name>/SKILL.md             14 skills (Agent Skills format) with their allowed tools
 tests/test_backend.py              permissions, disclosure, stages, guardrails, workflows, live tool loop (fake server)
+evals/golden.json, run_evals.py    25-case golden eval set and runner (release gate on critical cases)
 ```
 
 ### Why a plain Python WSGI app over SQLite
