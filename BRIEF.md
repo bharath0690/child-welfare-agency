@@ -18,7 +18,7 @@ AI runs scripted by default and goes live with `DEEPSEEK_API_KEY`. See `README.m
 
 **AI architecture.** The full target AI architecture (all tables plus the diagram) is in `docs/ai-architecture.md`. It is the source of truth for AI work in this repo. The persona canvas is in `canvas/index.html`.
 
-**Agent.** `AGENTS.md` defines the core agent and three persona profiles. `skills/*/SKILL.md` holds 15 skills (Phase 1 plus `caseload-chat`). Caseworkers land on the Binti AI home (`#/home`), a full-screen chat over their whole caseload. Every tool call goes through `binti/gateway.py`.
+**Agent.** `AGENTS.md` defines the core agent and three persona profiles. `skills/*/SKILL.md` holds 15 skills (Phase 1 plus `caseload-chat`). Caseworkers land on the Binti AI home (`#/home`), a full-screen chat over their whole caseload. Chats and memories are kept per viewer in a browser workspace (`#/workspace`). The Journey study and AI quality tools sit in the top-right "Internal use" menu. Every tool call goes through `binti/gateway.py`.
 
 **Next**
 1. Evals: the 25-case golden set is in `evals/` (24/25 pass; T1 needs a plain-language rewrite of the kin guide content). Next, add law citation and abstain sets with counsel, bilingual translation review, and edit distance from real signed notes.

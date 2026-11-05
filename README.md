@@ -2,10 +2,12 @@
 
 A working prototype of AI-assisted child welfare journeys for a **caseworker**, a **prospective foster or adoptive parent** and a **kin caregiver**. All names, cases and data are fictional. Children are shown as illustrated avatars, never photos. It is not an official Binti product.
 
-- **Binti AI home** (default landing for caseworkers): a full-screen chat over the whole caseload. "Your day" cards are color-coded by urgency (red urgent, amber soon, blue routine). Tap a card to ask about it, or ask anything about any child. Answers name the child and link to their case. The sidebar holds My cases and the Journey study pages.
+- **Binti AI home** (default landing for caseworkers): a full-screen chat over the whole caseload. "Your day" cards are color-coded by urgency (red urgent, amber soon, blue routine). Tap a card to ask about it, or ask anything about any child. Answers name the child and link to their case. The sidebar holds My cases.
 - **My cases** (sidebar): the case list. It has a case list with filters, a "Your day" briefing, and case and child pages. **Ask Binti AI** reads the current case, names its stage and suggests next actions you can pin and reorder, then lets you ask about the case. Use **Full screen** in the panel header for a two-column view, with actions on the left and a wide chat on the right. The chat box grows as you type: Enter sends, and Shift+Enter adds a new line.
 - **Journey study** (top menu): the original 21-screen concept walkthrough from the persona canvas (`canvas/index.html`).
-- **Viewing as** switcher: stands in for sign-in. Choose one of three caseworkers, a kin caregiver or an applicant family.
+- **Viewing as** (top left): stands in for sign-in. Choose one of three caseworkers, a kin caregiver or an applicant family. A one-time tip points it out on first load.
+- **Workspace** (top left, next to Viewing as): every Binti AI chat for every persona, saved in this browser only. Switching personas or reloading keeps each persona's history. Nothing is shared with other viewers, because the server doesn't store chats in workspace mode.
+- **Internal use** (top right): the three Journey study walkthroughs and the AI quality drawer. These are internal, not part of the end-user product.
 
 The design is in `docs/ai-architecture.md`, and the agent profile is in `AGENTS.md`.
 

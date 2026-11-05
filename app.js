@@ -74,17 +74,13 @@
   function stages() { return PRI[KEYS.indexOf(S.p)].st; }
   function renderTabs() {
     var cases = S.view === "cases";
-    function menu(id, label, current, active, items) {
-      return "<details class='menu" + (active ? " on" : "") + "' data-menu='" + id + "'><summary>" + label +
-        (active && current ? "<small>" + esc(current) + "</small>" : "") + "</summary><div class='menu-list' role='menu'>" + items + "</div></details>";
-    }
-    var prod = "<a role='menuitem' href='#/home'>Binti AI<small>Ask about any child or your whole caseload</small></a>" +
-      "<a role='menuitem' href='#/cases'>Cases<small>Case list and case pages</small></a>";
     var study = KEYS.map(function (k) {
-      return "<a role='menuitem' href='#/" + k + "/0'" + (!cases && k === S.p ? " aria-current='page'" : "") + ">" + LABEL[k] + "<small>Seven-stage journey from the persona canvas</small></a>";
+      return "<a role='menuitem' href='#/" + k + "/0'" + (!cases && k === S.p ? " aria-current='page'" : "") + ">" + LABEL[k] + " journey<small>Seven stages from the persona canvas</small></a>";
     }).join("");
-    document.getElementById("tabs").innerHTML = menu("prod", "Product experience", "Cases", cases, prod) +
-      menu("study", "Journey study", LABEL[S.p], !cases, study);
+    document.getElementById("tabs").innerHTML = "<details class='menu internal" + (!cases ? " on" : "") + "' data-menu='internal'><summary>Internal use</summary><div class='menu-list' role='menu'>" +
+      "<div class='menu-grp'>Journey study <span class='tag'>internal</span></div>" + study +
+      "<div class='menu-grp'>Evaluation <span class='tag'>internal</span></div>" +
+      "<button type='button' role='menuitem' class='menu-btn' data-act='drawer'>AI quality<small>Draft ratings and eval signals</small></button></div></details>";
   }
   function renderRail() {
     var st = stages();
@@ -144,7 +140,7 @@
   function route() {
     var h = location.hash || "#/home";
     var bw = document.getElementById("bw");
-    if (/^#\/(home|cases|case\/|application)/.test(h) && window.BW) {
+    if (/^#\/(home|cases|case\/|application|workspace)/.test(h) && window.BW) {
       clearTimers();
       S.view = "cases"; document.body.classList.add("bw-on"); bw.hidden = false;
       renderTabs(); renderDrawer(); window.BW.route(h);
@@ -152,7 +148,7 @@
       return;
     }
     S.view = "journeys"; document.body.classList.remove("bw-on"); if (bw) bw.hidden = true;
-    var tools = document.getElementById("hdr-tools"); if (tools) tools.innerHTML = "";
+    if (window.BW) window.BW.renderHeader();
     var m = h.match(/^#\/(caseworker|parent|kin)\/(\d)$/);
     var p = m ? m[1] : "caseworker", i = m ? +m[2] : 0;
     if (i > 6) i = 0;
