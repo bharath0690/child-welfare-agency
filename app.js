@@ -74,10 +74,16 @@
   function stages() { return PRI[KEYS.indexOf(S.p)].st; }
   function renderTabs() {
     var cases = S.view === "cases";
-    document.getElementById("tabs").innerHTML = "<button class='tab' role='tab' type='button' data-act='cases' aria-selected='" + cases + "'>Cases</button>" +
-      KEYS.map(function (k) {
-        return "<button class='tab' role='tab' type='button' data-act='persona' data-arg='" + k + "' aria-selected='" + (!cases && k === S.p) + "'>" + LABEL[k] + " journey</button>";
-      }).join("");
+    function menu(id, label, current, active, items) {
+      return "<details class='menu" + (active ? " on" : "") + "' data-menu='" + id + "'><summary>" + label +
+        (active && current ? "<small>" + esc(current) + "</small>" : "") + "</summary><div class='menu-list' role='menu'>" + items + "</div></details>";
+    }
+    var prod = "<a role='menuitem' href='#/cases'" + (cases ? " aria-current='page'" : "") + ">Cases<small>Case list, case pages and Binti AI</small></a>";
+    var study = KEYS.map(function (k) {
+      return "<a role='menuitem' href='#/" + k + "/0'" + (!cases && k === S.p ? " aria-current='page'" : "") + ">" + LABEL[k] + "<small>Seven-stage journey from the persona canvas</small></a>";
+    }).join("");
+    document.getElementById("tabs").innerHTML = menu("prod", "Product experience", "Cases", cases, prod) +
+      menu("study", "Journey study", LABEL[S.p], !cases, study);
   }
   function renderRail() {
     var st = stages();
@@ -145,6 +151,7 @@
       return;
     }
     S.view = "journeys"; document.body.classList.remove("bw-on"); if (bw) bw.hidden = true;
+    var tools = document.getElementById("hdr-tools"); if (tools) tools.innerHTML = "";
     var m = h.match(/^#\/(caseworker|parent|kin)\/(\d)$/);
     var p = m ? m[1] : "caseworker", i = m ? +m[2] : 0;
     if (i > 6) i = 0;
@@ -183,6 +190,17 @@
     document.addEventListener("input", function (e) {
       var el = e.target;
       if (el.dataset && el.dataset.bind) S.f[el.dataset.bind] = el.value;
+    });
+    /* header menus: one open at a time, close on outside click or Escape */
+    document.addEventListener("toggle", function (e) {
+      if (e.target.matches && e.target.matches("details.menu") && e.target.open)
+        document.querySelectorAll("details.menu[open]").forEach(function (d) { if (d !== e.target) d.open = false; });
+    }, true);
+    document.addEventListener("click", function (e) {
+      document.querySelectorAll("details.menu[open]").forEach(function (d) { if (!d.contains(e.target) || e.target.closest(".menu-list a")) d.open = false; });
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") document.querySelectorAll("details.menu[open]").forEach(function (d) { d.open = false; });
     });
     window.addEventListener("hashchange", route);
     route();
