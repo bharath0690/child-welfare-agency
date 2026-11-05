@@ -12,6 +12,8 @@
 
 **Architecture.** `H` (app.js) holds state `S`, `H.SCR[persona][stage]` renderers, `H.ACT` click actions via `data-act`/`data-arg`, `H.CHATS` scripted chats, `H.rate` rating buttons that feed the AI quality drawer.
 
+**Architecture.** The target AI architecture is in `docs/ai-architecture.md`. The owner has suggestions to apply to it. The persona canvas is in `canvas/index.html`.
+
 **Next (waiting on the owner's AI feature details)**
 1. Replace scripted AI with real feature specs: meeting transcription, form pre-fill, "Chat with Binti AI".
 2. Evals: draft accuracy, edit distance, bias flags caught, minutes saved. The drawer is a sketch.
