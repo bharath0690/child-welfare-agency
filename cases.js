@@ -21,7 +21,49 @@
   };
 
   function load(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
-  function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* storage blocked */ } }
+  function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+
+  /* ---------- browser workspace: every persona's chats and memories, kept in this browser only ---------- */
+  var WS = load("bw.ws") || {};
+  if (!WS.threads) WS = { v: 1, threads: {}, memories: {} };
+  function who() { return B.as.persona + ":" + B.as.user; }
+  function tkey(type, id) { return who() + ":" + type + ":" + (id || "-"); }
+  function saveWS() {
+    var keys = Object.keys(WS.threads);
+    while (!save("bw.ws", WS) && keys.length) {  /* storage full: drop the oldest thread and retry */
+      keys.sort(function (a, b) { return (WS.threads[a].updated || "") < (WS.threads[b].updated || "") ? -1 : 1; });
+      delete WS.threads[keys.shift()];
+    }
+  }
+  function wsPayload(type, id) {
+    var t = WS.threads[tkey(type, id)];
+    return { thread: t ? t.msgs.slice(-40) : [], memories: WS.memories[who()] || {} };  /* memories never cross personas */
+  }
+  function wsMsgs(type, id) { var t = WS.threads[tkey(type, id)]; return t ? t.msgs.slice() : []; }
+  function personName() {
+    if (!B.people) return B.as.user;
+    var all = B.people.caseworker.concat(B.people.kin, B.people.applicant);
+    return (all.filter(function (p) { return p.id === B.as.user; })[0] || {}).name || B.as.user;
+  }
+  function wsRecord(type, id, label, href, userText, r) {
+    var k = tkey(type, id), t = WS.threads[k];
+    if (!t) t = WS.threads[k] = { persona: B.as.persona, user: B.as.user, type: type, id: id, msgs: [] };
+    t.label = label; t.href = href; t.person = personName();
+    t.msgs.push({ role: "user", content: userText }, { role: "assistant", content: r.reply, meta: r.meta || {} });
+    if (t.msgs.length > 200) t.msgs = t.msgs.slice(-200);
+    t.updated = new Date().toISOString();
+    (r.memory_writes || []).forEach(function (w) {
+      var m = WS.memories[who()] = WS.memories[who()] || {};
+      (m[w.case_id] = m[w.case_id] || []).push(w.fact);
+    });
+    saveWS();
+  }
+  function threadLabel(type) {
+    if (type === "caseload") return "Caseload chat";
+    if (B.as.persona === "applicant") return "Application chat";
+    var c = B.detail && (B.detail.case ? B.detail.case.child : B.detail.child);
+    return c ? c.name + (B.detail.case ? " · " + B.detail.case.case_no : "") : "Case chat";
+  }
 
   function api(path, body) {
     var opt = { method: body ? "POST" : "GET", headers: { "X-Persona": B.as.persona, "X-User": B.as.user } };
@@ -101,9 +143,20 @@
       opts += "<optgroup label='Prospective parent'>" + B.people.applicant.map(function (p) { return opt("applicant", p.id, p.name); }).join("") + "</optgroup>";
     }
     function opt(per, id, label) { var v = per + ":" + id; return "<option value='" + v + "'" + (B.as.persona === per && B.as.user === id ? " selected" : "") + ">" + esc(label) + "</option>"; }
-    var mode = B.health ? (B.health.mode === "live" ? "AI: live · " + esc(B.health.model) : "AI: scripted (no API key)") : "";
-    return (mode ? "<span class='bw-mode'>" + mode + "</span>" : "") +
-      "<label class='bw-as'>Viewing as <select data-bw-change='as' aria-label='Viewing as'>" + opts + "</select></label>";
+    var tour = load("bw.tour") ? "" : "<div class='bw-tour' role='dialog' aria-label='Tip'><b>Switch personas here</b>" +
+      "<p>Try the product as a caseworker, a kin caregiver or a prospective parent. Your chats for each persona are saved in your browser's Workspace.</p>" +
+      "<button type='button' class='bw-btn sm pri' data-tour-dismiss>Got it</button></div>";
+    return "<label class='bw-as'><span>Viewing as</span><select data-bw-change='as' aria-label='Viewing as'>" + opts + "</select></label>" +
+      "<a class='bw-wslink' href='#/workspace'" + (B.view === "ws" ? " aria-current='page'" : "") + ">Workspace</a>" + tour;
+  }
+  function modeBadge() {
+    return B.health ? "<span class='bw-mode'>" + (B.health.mode === "live" ? "AI: live · " + esc(B.health.model) : "AI: scripted (no API key)") + "</span>" : "";
+  }
+  function renderHeader() {
+    var l = document.getElementById("hdr-left"), t = document.getElementById("hdr-tools");
+    if (l) l.innerHTML = bar();
+    if (t) t.innerHTML = modeBadge();
+    if (!B.people || !B.health) boot();
   }
 
   /* ---------- case list ---------- */
@@ -323,14 +376,18 @@
     var H2 = B.home;
     if (!text || H2.busy) return;
     H2.msgs.push({ role: "user", content: text }); H2.busy = true; render(); scrollHome();
-    api("/ai/chat", { object_type: "caseload", message: text }).then(function (r) {
-      H2.busy = false; H2.msgs.push({ role: "assistant", content: r.reply, meta: r.meta }); render(); scrollHome();
+    api("/ai/chat", { object_type: "caseload", message: text, workspace: wsPayload("caseload", B.as.user) }).then(function (r) {
+      H2.busy = false; H2.msgs.push({ role: "assistant", content: r.reply, meta: r.meta });
+      wsRecord("caseload", B.as.user, threadLabel("caseload"), "#/home", text, r);
+      render(); scrollHome();
     }).catch(function (e) { H2.busy = false; H2.msgs.push({ role: "assistant", content: "Sorry, that didn't work: " + e.message }); render(); });
   }
   function scrollHome() { var el = document.getElementById("bw-home-scroll"); if (el) el.scrollTop = el.scrollHeight; }
   function loadHome() {
     B.home.data = null; B.home.err = null; render();
-    api("/ai/open", { object_type: "caseload" }).then(function (x) { B.home.data = x; B.home.msgs = x.history; render(); if (x.history.length) scrollHome(); })
+    api("/ai/open", { object_type: "caseload", workspace: wsPayload("caseload", B.as.user) }).then(function (x) {
+      B.home.data = x; B.home.msgs = wsMsgs("caseload", B.as.user); render(); if (B.home.msgs.length) scrollHome();
+    })
       .catch(function (e) { B.home.err = e.message; render(); });
   }
   function sidebar() {
@@ -341,8 +398,26 @@
       items = it("#/home", SPARK + " Binti AI", v === "home") + it("#/cases", "My cases", v === "list" || v === "case", n ? "<span class='n'>" + n + "</span>" : "");
     } else if (per === "kin") items = it("#/cases", "My family", v === "list" || v === "case");
     else items = it("#/application", "My application", v === "app");
-    return "<nav class='bw-sidenav' aria-label='Workspace'><div class='grp'>Product experience</div>" + items +
-      "<div class='grp'>Journey study</div>" + it("#/caseworker/0", "Caseworker") + it("#/parent/0", "Prospective parent") + it("#/kin/0", "Kin caregiver") + "</nav>";
+    return "<nav class='bw-sidenav' aria-label='Main'>" + items + "</nav>";
+  }
+
+  /* ---------- workspace screen: every saved chat in this browser, across personas ---------- */
+  var PERSONA_LABEL = { caseworker: "Caseworker", kin: "Kin caregiver", applicant: "Prospective parent" };
+  function viewWorkspace() {
+    var keys = Object.keys(WS.threads).filter(function (k) { return WS.threads[k].msgs.length; })
+      .sort(function (a, b) { return (WS.threads[a].updated || "") < (WS.threads[b].updated || "") ? 1 : -1; });
+    var groups = {};
+    keys.forEach(function (k) { var t = WS.threads[k], g = t.persona + ":" + t.user; (groups[g] = groups[g] || { t: t, rows: [] }).rows.push(k); });
+    var body = keys.length ? Object.keys(groups).map(function (g) {
+      var G2 = groups[g];
+      return "<div class='bw-card'><div class='hd'><h3>" + esc(G2.t.person || G2.t.user) + " <span class='muted' style='font-weight:400'>· " + PERSONA_LABEL[G2.t.persona] + "</span></h3></div><div class='bd'><ul class='bw-list'>" +
+        G2.rows.map(function (k) {
+          var t = WS.threads[k], last = t.msgs[t.msgs.length - 1] || {}, n = t.msgs.filter(function (m) { return m.role === "user"; }).length;
+          return "<li class='bw-wsrow'><span><b>" + esc(t.label || t.type) + "</b><br><span class='muted small'>" + esc((last.content || "").replace(/[*#`|]/g, "").slice(0, 120)) + (last.content && last.content.length > 120 ? "…" : "") + "</span></span>" +
+            "<span class='meta'><span class='muted small'>" + n + " question" + (n === 1 ? "" : "s") + " · " + (t.updated ? d(t.updated.slice(0, 10)) : "") + "</span>" + btn("Open", "ws-open", k, "sm pri") + "</span></li>";
+        }).join("") + "</ul></div></div>";
+    }).join("") : "<div class='bw-card'><div class='bd bw-empty'>No saved chats yet. Ask Binti AI something as any persona and it shows up here.</div></div>";
+    return "<div><h1 style='font-size:22px;margin:0'>Workspace</h1><p class='muted'>Every Binti AI chat you've had, for every persona, saved in this browser only. Other people using this link can't see them. Switching personas keeps each one's history.</p></div>" + body;
   }
 
   /* ---------- Binti AI panel ---------- */
@@ -396,16 +471,18 @@
   function openPanel() {
     B.panel = { open: true, data: null, msgs: [], busy: false, err: null, draft: B.panel.draft || "" };
     render();
-    return api("/ai/open", objRef()).then(function (x) { B.panel.data = x; B.panel.msgs = x.history; render(); var pb = document.getElementById("bw-pb"); if (pb) pb.scrollTop = 0; })
+    var o = objRef(); o.workspace = wsPayload(o.object_type, o.object_id);
+    return api("/ai/open", o).then(function (x) { B.panel.data = x; B.panel.msgs = wsMsgs(o.object_type, o.object_id); render(); var pb = document.getElementById("bw-pb"); if (pb) pb.scrollTop = 0; })
       .catch(function (e) { B.panel.err = e.message; render(); });
   }
   function ask(text) {
     var P = B.panel;
     if (!text || P.busy) return;
     P.msgs.push({ role: "user", content: text }); P.busy = true; render(); scrollChat();
-    var body = objRef(); body.message = text;
+    var body = objRef(); body.message = text; body.workspace = wsPayload(body.object_type, body.object_id);
     api("/ai/chat", body).then(function (r) {
       P.busy = false; P.msgs.push({ role: "assistant", content: r.reply, meta: r.meta });
+      wsRecord(body.object_type, body.object_id, threadLabel(body.object_type), B.as.persona === "applicant" ? "#/application" : "#/case/" + body.object_id, text, r);
       if (r.actions && P.data) P.data.actions = r.actions;
       render(); scrollChat();
     }).catch(function (e) { P.busy = false; P.msgs.push({ role: "assistant", content: "Sorry, that didn't work: " + e.message }); render(); });
@@ -423,6 +500,13 @@
   var A = {
     "open-case": function (id) { location.hash = "#/case/" + id; },
     "home-ask": function (t) { homeAsk(t); },
+    "ws-open": function (k) {
+      var t = WS.threads[k]; if (!t) return;
+      B.as = { persona: t.persona, user: t.user }; save("bw.as", B.as);
+      B.panel.open = false; B.detail = null; B.caseId = null; B.app = null; B.home = { data: null, msgs: [], busy: false, err: null, draft: "" };
+      if (t.type === "case" || t.type === "application") { B.reopenPanel = true; }
+      location.hash = t.href;
+    },
     go: function (h) { location.hash = h; },
     tab: function (t) { B.tab = t; if (t === "audit") B.audit = null; render(); },
     "panel-open": openPanel,
@@ -483,8 +567,12 @@
 
   /* ---------- data loading ---------- */
   function boot() {
-    if (!B.people) api("/people").then(function (p) { B.people = p; render(); }).catch(fail);
-    if (!B.health) api("/health").then(function (h) { B.health = h; render(); }).catch(function () { /* shown by other calls */ });
+    if (B.booting) return;
+    B.booting = true;
+    Promise.all([
+      B.people ? null : api("/people").then(function (p) { B.people = p; }),
+      B.health ? null : api("/health").then(function (h) { B.health = h; }).catch(function () { /* shown by other calls */ })
+    ]).then(function () { B.booting = false; renderHeader(); render(); }).catch(function (e) { B.booting = false; fail(e); });
   }
   function loadList() {
     B.cases = null; B.briefing = null;
@@ -498,7 +586,8 @@
         if (p.kind === "note" && !B.findings[p.id]) api("/workflows/language-check", { text: p.payload.body }).then(function (r) { B.findings[p.id] = r; render(); });
       });
       render();
-      if (keepPanel && B.panel.open) api("/ai/open", objRef()).then(function (d) { B.panel.data = d; render(); });
+      if (B.reopenPanel) { B.reopenPanel = false; openPanel(); }
+      if (keepPanel && B.panel.open) { var o = objRef(); o.workspace = wsPayload(o.object_type, o.object_id); api("/ai/open", o).then(function (d) { B.panel.data = d; render(); }); }
     }).catch(fail);
   }
   function loadApp() { api("/application").then(function (a) { B.app = a; render(); }).catch(fail); }
@@ -508,11 +597,11 @@
   function render() {
     var root = document.getElementById("bw");
     if (!root || root.hidden) return;
-    var body = B.err ? "<div class='bw-err'>" + esc(B.err) + "</div>" : B.view === "home" ? viewHome() : B.view === "case" ? viewCase() : B.view === "app" ? viewApp() : viewList();
+    var body = B.err ? "<div class='bw-err'>" + esc(B.err) + "</div>" : B.view === "ws" ? viewWorkspace() : B.view === "home" ? viewHome() : B.view === "case" ? viewCase() : B.view === "app" ? viewApp() : viewList();
     var y = window.scrollY, keep = {};
     ["bw-pb", "bw-side", "bw-chat", "bw-home-scroll"].forEach(function (id) { var el = document.getElementById(id); if (el) keep[id] = el.scrollTop; });
     var focus = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.bwInput : null, caret = focus ? document.activeElement.selectionStart : 0;
-    var tools = document.getElementById("hdr-tools"); if (tools) tools.innerHTML = bar();
+    renderHeader();
     document.body.classList.toggle("bw-full", B.panel.open && B.full);
     document.body.classList.toggle("bw-homeview", B.view === "home");
     root.innerHTML = "<div class='bw-shell'>" + sidebar() + "<main class='bw-main" + (B.view === "home" ? " home" : "") + "'>" + body + "</main></div>" + panel() + (B.toast ? "<div class='bw-toast' role='status'>" + esc(B.toast) + "</div>" : "");
@@ -526,7 +615,9 @@
     B.err = null;
     var m;
     boot();
-    if (/^#\/home/.test(hash) || hash === "" || hash === "#/") {
+    if (/^#\/workspace/.test(hash)) {
+      B.view = "ws"; B.panel.open = false; render();
+    } else if (/^#\/home/.test(hash) || hash === "" || hash === "#/") {
       if (B.as.persona === "applicant") { location.replace("#/application"); return; }
       if (B.as.persona === "kin") { location.replace("#/cases"); return; }
       B.view = "home"; B.panel.open = false; render(); loadHome();
@@ -534,7 +625,8 @@
       if (B.caseId !== m[1]) { B.panel.open = false; B.tab = "relationships"; B.detail = null; B.findings = {}; }
       B.view = "case"; B.caseId = m[1]; render(); reloadCase(false);
     } else if (/^#\/application/.test(hash)) {
-      B.view = "app"; B.panel.open = false; render(); if (B.as.persona === "applicant") loadApp();
+      B.view = "app"; B.panel.open = false; render();
+      if (B.as.persona === "applicant") { loadApp(); if (B.reopenPanel) { B.reopenPanel = false; openPanel(); } }
     } else {
       if (B.as.persona === "applicant") { location.replace("#/application"); return; }
       B.view = "list"; B.panel.open = false; render(); loadList();
@@ -585,5 +677,8 @@
     if (f.dataset.bwForm === "home-chat") { B.home.draft = ""; homeAsk(q); } else { B.panel.draft = ""; ask(q); }
   });
 
-  window.BW = { route: route, render: render };
+  document.addEventListener("click", function (e) {
+    if (e.target.closest("[data-tour-dismiss]")) { save("bw.tour", 1); renderHeader(); }
+  });
+  window.BW = { route: route, render: render, renderHeader: renderHeader };
 })();

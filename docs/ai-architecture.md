@@ -259,7 +259,7 @@ The prototype uses fictional data only.
 | Gateway (D2, D3) | `binti/gateway.py`: one schema registry, persona allowlist, per-user scope, disclosure matrix, audit on every call, idempotent proposals. Plain function calls stand in for MCP |
 | Stage and next action (D7) | `binti/stages.py` |
 | Retrieval (D5) | `program_search`: BM25-style keyword search, with the audience filter applied first. The vector half and the law corpus come in Phase 2 |
-| Memory | `chat_messages` (keyed by case, application, or the caseworker's caseload thread) and `case_memory` (always keyed by one case or application) |
+| Memory | **Browser workspace** (prototype): each viewer's chats and "remember" facts live in their browser, keyed by persona and object, and are sent with each request (`agent.workspace`). While a workspace is active the server neither stores nor returns chat history from its shared database, so anonymous viewers never see each other's chats. Memories are scoped per persona, so a caseworker's notes never reach the kin agent. Server tables `chat_messages` and `case_memory` remain for database mode and tests. Production replaces the browser store with a per-user server store behind sign-in |
 | Guardrails | `binti/guardrails.py`. Safety detection runs before any model call |
 | Model gateway | `binti/llm.py`: DeepSeek through `DEEPSEEK_API_KEY`, with a scripted fallback on the same gateway. The vendor choice is still subject to open questions 3 and 6 |
 | Audit | The `audit_log` table, shown in the case page's Audit log tab |

@@ -91,13 +91,17 @@ def briefing(req):
 @route("POST", "/api/ai/open")
 def ai_open(req):
     b = req["json"]
-    return agent.open_panel(ident_of(req), b.get("object_type", "case"), b.get("object_id"))
+    with agent.workspace(b.get("workspace")):
+        return agent.open_panel(ident_of(req), b.get("object_type", "case"), b.get("object_id"))
 
 
 @route("POST", "/api/ai/chat")
 def ai_chat(req):
     b = req["json"]
-    return agent.chat(ident_of(req), b.get("object_type", "case"), b.get("object_id"), b.get("message", ""))
+    with agent.workspace(b.get("workspace")) as ws:
+        out = agent.chat(ident_of(req), b.get("object_type", "case"), b.get("object_id"), b.get("message", ""))
+        out["memory_writes"] = ws.memory_writes
+        return out
 
 
 @route("POST", r"/api/cases/(?P<case_id>[\w-]+)/actions/(?P<action_id>\d+)")
