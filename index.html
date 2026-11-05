@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Binti AI Journeys (concept prototype)</title>
+<meta name="description" content="A concept prototype of AI-assisted journeys for a caseworker, a prospective foster parent and a kin caregiver. Fictional data. Not an official Binti product.">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:wght@600&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="brand">Journeys <span>Concept prototype</span></div>
+    <nav class="tabs" id="tabs" role="tablist" aria-label="Persona"></nav>
+    <button class="btn ai" id="qbtn" type="button" data-act="drawer">AI quality</button>
+  </div>
+</header>
+<div class="notice"><div class="wrap">A concept prototype exploring AI-assisted journeys. Not an official Binti product. All names and data are fictional, and the AI responses are scripted.</div></div>
+
+<main class="wrap layout">
+  <nav class="rail" id="rail" aria-label="Journey stages"></nav>
+  <section id="screen" aria-live="polite"></section>
+  <aside class="notes" id="notes"></aside>
+</main>
+<div class="wrap foot">Each persona follows the journey drawn in the Binti persona canvas. The faces show how a stage feels today (rose) and the intended feeling with the product (teal). Scores are illustrative and need validating with real users.</div>
+
+<aside class="drawer" id="drawer" hidden aria-label="AI quality"></aside>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script src="screens-caseworker.js"></script>
+<script src="screens-family.js"></script>
+<script src="boot.js"></script>
+</body>
+</html>
