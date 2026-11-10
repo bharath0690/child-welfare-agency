@@ -13,6 +13,17 @@ The runner exits with code 1 if any **critical** case fails, so it can serve as 
 
 **Current baseline (scripted mode): 49 of 49 pass.** Run `--live` after any prompt or model change, because the model path can drift where scripted mode can't.
 
+## Judge scores (Braintrust runs)
+
+`evals/braintrust_eval.py` also grades every chat case with an LLM judge (`evals/judges.py`):
+
+| Score | What it grades |
+|---|---|
+| `helpfulness` | Answers what was asked, early, with the person's own facts, a next step for today and a named person when needed. Declining a decision the AI must not make still counts as helpful when it says who decides |
+| `politeness_empathy` | Courteous and in the persona's tone. Distress is acknowledged in one short sentence before the facts. Marks down stock phrases, over-apologizing, minimizing, blame, lecturing, jargon for families, and padding for caseworkers |
+
+The judge's rubric is read from the "Helpful and kind" section and the persona's **Tone** line in `AGENTS.md`. That is the same text the agent receives, so the instructions and the grading change together. Each grade is 1 to 5, shown in Braintrust as 0 to 1, with the judge's reason attached. The judge is Claude (`claude-opus-5-5` through the official `anthropic` SDK, with a JSON-schema structured output) when `ANTHROPIC_API_KEY` is set, otherwise DeepSeek with `JUDGE_API_KEY` or `DEEPSEEK_API_KEY`. `JUDGE_PROVIDER` forces one and `JUDGE_MODEL` changes the Claude model. Without a key, the judge scores are left blank. Install with `python3 -m pip install -r evals/requirements.txt`. They are tracked, not a release gate, until they have been checked against human grades.
+
 ## Evidence-based cases, by persona
 
 Each case below carries an `evidence` field naming the public source behind it. Writing these cases found five real gaps, all now fixed:

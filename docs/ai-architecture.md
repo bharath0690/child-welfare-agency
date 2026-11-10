@@ -240,6 +240,7 @@ flowchart TB
 | Eval | Feature | Source of truth |
 |---|---|---|
 | Draft accuracy, edit distance | Notes, pre-fill, reports | The note the worker signed. The prototype logs approval and edit similarity per draft as online signals |
+| Helpfulness, politeness and empathy | All chat | LLM judge (`evals/judges.py`) graded against the "Helpful and kind" section and each persona's Tone line in `AGENTS.md`, the same text the agent is given. The judge is Claude when `ANTHROPIC_API_KEY` is set, else DeepSeek. A judge from a different vendor than the app's model avoids grading its own answers. Check it against human grades before trusting it as a release bar |
 | Fault-language catch rate and false alarms | Language check | Set labeled by supervisors |
 | Citation accuracy, abstain rate | Law Q&A | Golden set per jurisdiction, written with counsel |
 | Translation quality | Outreach | Bilingual reviewers |
@@ -295,7 +296,7 @@ The prototype uses fictional data only.
 | Model gateway | `binti/llm.py`: DeepSeek through `DEEPSEEK_API_KEY`, with a scripted fallback on the same gateway. The vendor choice is still subject to open questions 3 and 6 |
 | Audit | The `audit_log` table, shown in the case page's Audit log tab |
 | Online evals and tracing | `binti/observability.py` sends one Braintrust trace per AI request, with model and tool spans. Tool spans log field names, not values. Safety disclosures are redacted, and `BRAINTRUST_LOG_CONTENT=false` logs metadata only. Approvals, edit similarity and draft ratings are attached as feedback scores. Off unless `BRAINTRUST_API_KEY` is set. With real case data, Braintrust becomes a data processor and falls under open question 3 |
-| Evals | `tests/` (unit tests), `evals/golden.json` with `evals/run_evals.py` (49-case golden set, with evidence-based cases per persona), `evals/braintrust_eval.py` (the same set as a Braintrust experiment, with a pass score per persona group), CI in `.github/workflows/evals.yml`, and draft ratings in the AI quality drawer |
+| Evals | `tests/` (unit tests), `evals/golden.json` with `evals/run_evals.py` (49-case golden set, with evidence-based cases per persona), `evals/braintrust_eval.py` (the same set as a Braintrust experiment, with a pass score per persona group and LLM-judge scores for helpfulness and politeness and empathy from `evals/judges.py`), CI in `.github/workflows/evals.yml`, and draft ratings in the AI quality drawer |
 | SMS | Not built. Needs a messaging provider |
 | Speech to text | Not built. Transcripts are seeded, with consent and speaker labels |
 

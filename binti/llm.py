@@ -27,18 +27,21 @@ def model_name() -> str:
     return os.environ.get("DEEPSEEK_MODEL", "deepseek-chat")
 
 
-def chat(messages, tools=None, temperature=0.3, max_tokens=900, json_mode=False, timeout=45):
-    """Return the assistant message dict: {"content": str|None, "tool_calls": [...]}."""
+def chat(messages, tools=None, temperature=0.3, max_tokens=900, json_mode=False, timeout=45, api_key=None):
+    """Return the assistant message dict: {"content": str|None, "tool_calls": [...]}.
+
+    api_key overrides DEEPSEEK_API_KEY for one call. The eval judges use it, so a scripted run can still be graded."""
     with obs.child_span("llm: " + model_name(), "llm", input=messages,
                         metadata={"model": model_name(), "temperature": temperature, "tools": len(tools or [])}) as log:
-        msg, usage = _chat(messages, tools, temperature, max_tokens, json_mode, timeout)
+        msg, usage = _chat(messages, tools, temperature, max_tokens, json_mode, timeout, api_key)
         log(output=msg, metrics={"prompt_tokens": usage.get("prompt_tokens"), "completion_tokens": usage.get("completion_tokens"),
                                  "tokens": usage.get("total_tokens")})
         return msg
 
 
-def _chat(messages, tools, temperature, max_tokens, json_mode, timeout):
-    if not enabled():
+def _chat(messages, tools, temperature, max_tokens, json_mode, timeout, api_key=None):
+    key = (api_key or os.environ.get("DEEPSEEK_API_KEY", "")).strip()
+    if not key:
         raise LLMError("No DEEPSEEK_API_KEY set")
     body = {"model": model_name(), "messages": messages, "temperature": temperature, "max_tokens": max_tokens}
     if tools:
@@ -49,7 +52,7 @@ def _chat(messages, tools, temperature, max_tokens, json_mode, timeout):
     base = os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com").rstrip("/")
     req = urllib.request.Request(base + "/chat/completions", data=json.dumps(body).encode(), method="POST",
                                  headers={"Content-Type": "application/json",
-                                          "Authorization": "Bearer " + os.environ["DEEPSEEK_API_KEY"].strip()})
+                                          "Authorization": "Bearer " + key})
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
             data = json.loads(r.read())
