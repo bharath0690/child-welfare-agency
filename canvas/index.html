@@ -9,7 +9,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: sticky section nav on the left (a scrolling bar on phones), seven numbered sections in reading order.
+/* Layout: sticky section nav on the left (a scrolling bar on phones), ten numbered sections in reading order.
    Category colors tag personas across sections; red marks gaps where no module serves a step. */
 :root {
   --bg: #f5f8fc;
@@ -236,14 +236,15 @@ details.persona > summary b { color: var(--c, var(--ink)); }
 <nav class="nav" aria-label="Sections" id="nav">
   <b>Binti Persona Map</b>
   <a href="#problem"><span>1</span>Problem</a>
-  <a href="#goals"><span>2</span>Goals</a>
-  <a href="#personas"><span>3</span>Personas</a>
-  <a href="#journeys"><span>4</span>Journeys</a>
-  <a href="#priority"><span>5</span>Priority journeys</a>
-  <a href="#modules"><span>6</span>Modules</a>
-  <a href="#mapping"><span>7</span>Mapping</a>
-  <a href="#future"><span>8</span>Future state</a>
-  <a href="#questions"><span>9</span>Open questions</a>
+  <a href="#voices"><span>2</span>Voices</a>
+  <a href="#goals"><span>3</span>Goals</a>
+  <a href="#personas"><span>4</span>Personas</a>
+  <a href="#journeys"><span>5</span>Journeys</a>
+  <a href="#priority"><span>6</span>Priority journeys</a>
+  <a href="#modules"><span>7</span>Modules</a>
+  <a href="#mapping"><span>8</span>Mapping</a>
+  <a href="#future"><span>9</span>Future state</a>
+  <a href="#questions"><span>10</span>Open questions</a>
 </nav>
 
 <main>
@@ -278,8 +279,33 @@ details.persona > summary b { color: var(--c, var(--ink)); }
   </div>
 </section>
 
+<section id="voices">
+  <div class="sec-head"><span class="mono">2 / Voices from the field</span><h2>What caseworkers, kin caregivers and new foster parents say in public</h2>
+  <p class="lede">Evidence behind the problem statement for the three priority personas: audits, studies, news, employee reviews and parent forums, each linked and placed on a journey stage. <a href="https://claude.ai/artifact/MbMHvaRKZLobF9b7MPeSwf" target="_blank" rel="noopener">Open the full, filterable page</a>.</p></div>
+  <div class="grid3">
+    <div class="card tint t-a"><h4>Caseworker</h4><ul class="tight">
+      <li>Paperwork crowds out families: under 35% of case hours go to children and families. <a href="https://acquia-prod.hhd.psu.edu/sites/default/files/center-safe-and-healthy-children-cshc/center-safe-and-healthy-children-cshc-pennsylvaniachildwelfarecaseworkerpdf.pdf" target="_blank" rel="noopener">Pennsylvania time study</a></li>
+      <li>Caseloads far above standard: about 45 cases each against a recommended 12. <a href="https://www.nhpr.org/post/dcyf-staff-ask-lawmakers-help-keeping-growing-amount-calls" target="_blank" rel="noopener">NHPR</a></li>
+      <li>Workload and paperwork drive people out. Good supervision keeps them. <a href="https://www.hawaii.edu/news/2023/06/22/high-turnover-in-child-welfare/" target="_blank" rel="noopener">Univ. of Hawaiʻi</a>, <a href="https://digitalcommons.unl.edu/qicwdproducts/2/" target="_blank" rel="noopener">QIC-WD</a></li>
+      <li>Monthly visits stack on top of court and paperwork. <a href="https://www.timesfreepress.com/news/2021/aug/07/children-services/" target="_blank" rel="noopener">Times Free Press</a></li></ul></div>
+    <div class="card tint t-c"><h4>Kin caregiver</h4><ul class="tight">
+      <li>Placed in hours, paid after months: licensing averages about 160 days, and many states pay nothing until it is done. <a href="https://prnewswire.com/news-releases/family-ties-urges-action-to-support-kin-caring-for-youth-involved-with-the-child-welfare-system-302090528.html" target="_blank" rel="noopener">Family Ties</a></li>
+      <li>A crisis start with little information: about a third of kin carers get any training. <a href="https://aifs.gov.au/media-releases/grandparents-caring-vulnerable-children-say-they-need-more-support" target="_blank" rel="noopener">AIFS</a></li>
+      <li>Money strain: caregivers delay their own health care and home repairs. <a href="https://www.gao.gov/assets/gao-26-107658.pdf" target="_blank" rel="noopener">GAO, Dec 2025</a></li>
+      <li>No public evidence found yet for planning the long term. That is a gap for interviews.</li></ul></div>
+    <div class="card tint t-b"><h4>Prospective foster or adoptive parent</h4><ul class="tight">
+      <li>Not hearing back from staff is one of the most consistent complaints. Over three-quarters of families hit a barrier. <a href="https://professionals.adoptuskids.org/?p=2148" target="_blank" rel="noopener">AdoptUSKids</a></li>
+      <li>Unexplained waits: a home study stalled for nine months over a background check. <a href="https://reddit.birdcat.cafe/r/fosterit/comments/1lfuto2/how_long_is_a_home_study_supposed_to_take" target="_blank" rel="noopener">r/fosterit (mirror)</a></li>
+      <li>Thin information at placement and calls from several workers. <a href="https://www.azauditor.gov/sites/default/files/2023-11/19-113_36-Mth_Followup.pdf" target="_blank" rel="noopener">Arizona audit</a>, <a href="https://www.jitnevada.org/documents/clark/qpiWorkgroups/Recruitment_11-03-2015.pdf" target="_blank" rel="noopener">Nevada workgroup</a></li>
+      <li>Adoption finalization can take years. <a href="https://www.leginfo.ca.gov/pub/05-06/bill/asm/ab_1601-1650/ab_1638_cfa_20050411_140431_asm_comm.html" target="_blank" rel="noopener">California bill analysis</a></li></ul></div>
+  </div>
+  <div class="toolbar"><span class="small muted" id="voiceCount"></span></div>
+  <div id="voiceList" class="catblock"></div>
+  <p class="small muted">Gathered November 2026 from public web search. Findings are paraphrased from source excerpts. Reddit threads appear through third-party mirrors. Check originals before quoting a number.</p>
+</section>
+
 <section id="goals">
-  <div class="sec-head"><span class="mono">2 / Goals</span><h2>Outcome goals for children, product goals for Binti</h2>
+  <div class="sec-head"><span class="mono">3 / Goals</span><h2>Outcome goals for children, product goals for Binti</h2>
   <p class="lede">The outcome goals are the five things child welfare is for, in order of preference. Product and growth goals come from Binti's stated plans.</p></div>
   <div class="scroll"><table>
     <thead><tr><th>Type</th><th>Goal</th><th>What it means</th><th>Source</th></tr></thead>
@@ -299,33 +325,33 @@ details.persona > summary b { color: var(--c, var(--ink)); }
 </section>
 
 <section id="personas">
-  <div class="sec-head"><span class="mono">3 / User personas</span><h2>26 personas in 5 categories</h2>
+  <div class="sec-head"><span class="mono">4 / User personas</span><h2>26 personas in 5 categories</h2>
   <p class="lede">The first 17 personas came from the earlier version of this map. Research added nine more, marked New. The tag on each one shows where it came from.</p></div>
   <div class="callout"><b>Why nine more.</b> Judges, attorneys and advocates make decisions from agency reports. Private agencies, community providers and Indigenous governing bodies work next to the agency in their own systems. Someone has to configure the platform and someone has to prepare the compliance reports. And a relative who receives a notice is not yet a caregiver.</div>
   <div id="personaList" class="catblock"></div>
 </section>
 
 <section id="journeys">
-  <div class="sec-head"><span class="mono">4 / Problems and journeys</span><h2>What each persona faces day to day, and how their journey runs</h2>
+  <div class="sec-head"><span class="mono">5 / Problems and journeys</span><h2>What each persona faces day to day, and how their journey runs</h2>
   <p class="lede">Each category and sub-category has a problem statement. Each persona has a day-to-day summary, three problems and a five-step journey. Chips under each step show which module serves it.</p></div>
   <div class="toolbar"><button class="btn" id="openAll" type="button">Expand all journeys</button><button class="btn" id="closeAll" type="button">Collapse all</button></div>
   <div id="journeyList" class="catblock"></div>
 </section>
 
 <section id="priority">
-  <div class="sec-head"><span class="mono">5 / Priority journeys</span><h2>Three personas to design the experience for first</h2>
+  <div class="sec-head"><span class="mono">6 / Priority journeys</span><h2>Three personas to design the experience for first</h2>
   <p class="lede">Three personas to start with, picked against three priorities: social workers whose work should feel rewarding, new parents applying for a license, and one persona with a lot of friction today. Each journey runs inside the product. The red line shows how a stage feels now, and the teal line shows the experience to aim for. Each face marks a positive, neutral or negative feeling. The scores are illustrative and need testing with real users. A stage marked New surface needs a screen that Binti's site does not describe.</p></div>
   <div id="priorityList" class="pri catblock"></div>
 </section>
 
 <section id="modules">
-  <div class="sec-head"><span class="mono">6 / Modules</span><h2>Eight core modules and four platform capabilities</h2>
+  <div class="sec-head"><span class="mono">7 / Modules</span><h2>Eight core modules and four platform capabilities</h2>
   <p class="lede">Status comes from Binti's company overview, from early 2025, and may be out of date. Binti's site lists Intake, Investigations, Case Management, Placements and Eligibility and Payments only inside its CCWIS bundle, so those descriptions are working definitions.</p></div>
   <div id="moduleList" class="grid2"></div>
 </section>
 
 <section id="mapping">
-  <div class="sec-head"><span class="mono">7 / Persona to module mapping</span><h2>Which modules each persona uses at each step</h2>
+  <div class="sec-head"><span class="mono">8 / Persona to module mapping</span><h2>Which modules each persona uses at each step</h2>
   <p class="lede">Each number counts journey steps where a persona touches a module. Select a cell to see those steps. Red marks steps where a module could help but none exists today.</p></div>
   <div class="stats" id="stats"></div>
   <div class="scroll"><table class="matrix" id="matrix"></table></div>
@@ -335,7 +361,7 @@ details.persona > summary b { color: var(--c, var(--ink)); }
 </section>
 
 <section id="future">
-  <div class="sec-head"><span class="mono">8 / Future state</span><h2>Taking the platform abroad</h2>
+  <div class="sec-head"><span class="mono">9 / Future state</span><h2>Taking the platform abroad</h2>
   <p class="lede">Scoped to Canada and Australia. These are early readings of public sources and should be checked before anyone relies on them.</p></div>
 
   <div class="grid2">
@@ -366,7 +392,7 @@ details.persona > summary b { color: var(--c, var(--ink)); }
 </section>
 
 <section id="questions">
-  <div class="sec-head"><span class="mono">9 / Open questions</span><h2>Questions to settle before building further</h2></div>
+  <div class="sec-head"><span class="mono">10 / Open questions</span><h2>Questions to settle before building further</h2></div>
   <div class="card tint t-c"><ul class="tight">
     <li>Should courts, attorneys, CASA volunteers and Indigenous governing bodies be direct users with their own views, or should the platform exchange data with their systems?</li>
     <li>Which Canadian provinces and Australian states come first? Is French required in Canada?</li>
@@ -936,7 +962,178 @@ function renderPriority() {
   });
   document.getElementById("priorityList").innerHTML = h;
 }
-renderPersonas(); renderJourneys(); renderModules(); renderMatrix(); renderStats(); renderGaps(); renderPriority(); setCat("A");
+/* Public evidence on the three priority personas. Gathered Nov 2026 from search results; findings are paraphrased from
+   source excerpts unless shown in quotes. p: cw = caseworker, kin = kin caregiver, par = prospective foster or adoptive parent.
+   st: journey stages from the persona map (plus "Across the job" for caseworkers and "After placement and adoption" for parents).
+   t: Government, Research, News, Forum, Review, Advocacy. q: strong, medium, care (use with care). */
+var EV_STAGES = {
+  cw: ["Start the day", "Accept a new case", "Build the plan with the family", "Visit and capture", "Find and engage kin", "Prepare for court", "Reach permanency and close", "Across the job"],
+  kin: ["The first contact", "Weigh the decision", "Say yes", "Get approved", "The first weeks", "Everyday care", "Plan the long term"],
+  par: ["Explore", "Inquire", "Apply", "Complete requirements", "Home study", "Approval and wait", "Get matched", "After placement and adoption"]
+};
+var EV_PERSONA = { cw: "Caseworker", kin: "Kin caregiver", par: "Prospective foster or adoptive parent" };
+var EV = [
+ { p: "cw", st: ["Visit and capture", "Across the job"], t: "Government", q: "strong", y: "2019", s: "Penn State Center for Safe and Healthy Children", h: "Pennsylvania caseworker time study",
+   f: "Time with children and families is estimated at less than 35% of total case hours per month.", u: "https://acquia-prod.hhd.psu.edu/sites/default/files/center-safe-and-healthy-children-cshc/center-safe-and-healthy-children-cshc-pennsylvaniachildwelfarecaseworkerpdf.pdf" },
+ { p: "cw", st: ["Across the job"], t: "Research", q: "care", y: "", s: "NDACAN listserv, citing American Humane", h: "Share of worker time in direct contact",
+   f: "About 25% of worker time is direct communication with people on the case, and 30 to 40% goes to non-case activities.", u: "https://www.ndacan.acf.hhs.gov/cmrl/cmrlDetails.cfm?ID=9124", n: "Secondhand citation, undated." },
+ { p: "cw", st: ["Visit and capture"], t: "Advocacy", q: "care", y: "2025", s: "SpeakWrite white paper, citing a Colorado workload study", h: "Documentation share of recorded time",
+   f: "Documentation and administration took 38% of all recorded caseworker time.", u: "https://speakwrite.com/wp-content/uploads/2025/08/Stop-Making-CPS-Caseworkers-Type.pdf", n: "Vendor source. Verify against the original state audit." },
+ { p: "cw", st: ["Across the job"], t: "Research", q: "medium", y: "2024", s: "SSWR 2024 conference paper", h: "Why Pennsylvania caseworkers leave",
+   f: "About 80% of open-ended survey responses were about workload and caseload, and 111 mentioned paperwork and computer work after a 2014 system change.", u: "https://sswr.confex.com/sswr/2024/webprogram/Paper52651.html" },
+ { p: "cw", st: ["Across the job"], t: "Government", q: "strong", y: "2018", s: "Pennsylvania courts, caseworker retention report", h: "Retention concerns",
+   f: "Lists paperwork and caseload size relative to paperwork among the main concerns.", u: "https://ocfcpacourts.us/wp-content/uploads/2020/06/2018-CW-Retention-Report-Updated-After-SRT-001774.pdf" },
+ { p: "cw", st: ["Across the job"], t: "Research", q: "strong", y: "2023", s: "University of Hawaiʻi", h: "High turnover in child welfare",
+   f: "Work intensity was most associated with intent to leave. Researchers recommend reducing caseloads and administrative paperwork.", u: "https://www.hawaii.edu/news/2023/06/22/high-turnover-in-child-welfare/" },
+ { p: "cw", st: ["Across the job"], t: "Research", q: "medium", y: "", s: "Kutztown University dissertation", h: "Risk factors for burnout",
+   f: "Role stress, caseload size, documentation and ineffective training were risk factors for burnout.", u: "https://research.library.kutztown.edu/socialworkdissertations/31/" },
+ { p: "cw", st: ["Across the job"], t: "Research", q: "strong", y: "", s: "QIC-WD (Children's Bureau workforce center)", h: "What keeps workers",
+   f: "Workers were more likely to stay with good supervisor and peer relationships.", u: "https://digitalcommons.unl.edu/qicwdproducts/2/" },
+ { p: "cw", st: ["Start the day", "Across the job"], t: "News", q: "medium", y: "2025", s: "New Hampshire Public Radio", h: "DCYF staff ask lawmakers for help",
+   f: "Caseworkers juggle around 45 cases each, against a recommended 12.", u: "https://www.nhpr.org/post/dcyf-staff-ask-lawmakers-help-keeping-growing-amount-calls" },
+ { p: "cw", st: ["Visit and capture"], t: "News", q: "medium", y: "2015", s: "Investigative Post", h: "Erie County child abuse unit still struggling",
+   f: "Caseloads rose from an average of 15 to 27, and many workers fell \"weeks, even months, behind on their paperwork.\"", u: "https://investigativepost.org/2015/07/23/child-abuse-unit-still-struggling/" },
+ { p: "cw", st: ["Visit and capture"], t: "News", q: "medium", y: "2026", s: "News Tribune (Missouri)", h: "Agency isn't seeking to add caseworkers",
+   f: "Through mid-2025, few counties met the monthly caseworker-visit policy. An advocate called a 20-case target unrealistic.", u: "https://www.newstribune.com/news/2026/jan/27/missouri-child-welfare-agency-isnt-seeking-to-add/" },
+ { p: "cw", st: ["Across the job"], t: "News", q: "medium", y: "2022", s: "St. Louis Public Radio", h: "Missouri caseworkers say they're drowning",
+   f: "Children's Division workers describe drowning in cases amid staff shortages.", u: "https://www.stlpr.org/government-politics-issues/2022-04-06/missouri-caseworkers-say-theyre-drowning-as-childrens-division-plagued-by-staff-shortages" },
+ { p: "cw", st: ["Across the job"], t: "News", q: "medium", y: "2022", s: "The Advocate (Louisiana)", h: "Child welfare workers say they're overworked",
+   f: "A legislative audit survey found caseloads rising while staff numbers fall. A worker said leadership \"constantly makes our jobs even harder.\"", u: "https://www.theadvocate.com/baton_rouge/louisiana-child-welfare-workers-say-theyre-overworked/article_c1544ee6-74ec-11ed-b20a-4356572b2f0c.html" },
+ { p: "cw", st: ["Visit and capture", "Prepare for court"], t: "News", q: "medium", y: "2021", s: "Chattanooga Times Free Press", h: "Tennessee children's services",
+   f: "A 40-case load requires monthly face-to-face visits, \"on top of court, paperwork.\"", u: "https://www.timesfreepress.com/news/2021/aug/07/children-services/" },
+ { p: "cw", st: ["Prepare for court"], t: "News", q: "medium", y: "2018", s: "CBC News", h: "Why Nova Scotia's social workers are burning out",
+   f: "The paperwork required to push cases through the court system adds to the strain.", u: "https://amp.cbc.ca/news/canada/nova-scotia/social-worker-workload-caseload-burn-out-paperwork-community-services-1.4789543" },
+ { p: "cw", st: ["Across the job"], t: "News", q: "medium", y: "", s: "KUT (Texas)", h: "Texas agency struggling to keep caseworkers",
+   f: "Exit surveys cite a tense work environment and heavy workload.", u: "https://www.kut.org/post/texas-child-welfare-agency-struggling-keep-caseworkers" },
+ { p: "cw", st: ["Across the job"], t: "News", q: "medium", y: "", s: "Fox 13 (Utah)", h: "High DCFS turnover and caseloads",
+   f: "Turnover fell from a 40% peak to about 20%, but an official said gains were made \"mostly on the backs of workers, and it's not sustainable.\"", u: "https://www.fox13now.com/news/fox-13-investigates/how-high-dcfs-turnover-high-caseloads-affect-utah-children-facing-abuse" },
+ { p: "cw", st: ["Across the job"], t: "News", q: "medium", y: "", s: "WXYZ (Michigan)", h: "CPS employees struggle with high caseloads",
+   f: "Staff say the agency is losing the fight to keep children safe. A state representative: \"CPS is overwhelmed, under resourced.\"", u: "https://www.wxyz.com/news/local-news/investigations/cps-employees-struggle-with-high-caseloads-vacant-positions-there-are-not-enough-people" },
+ { p: "cw", st: ["Across the job"], t: "News", q: "medium", y: "", s: "KATU (Oregon)", h: "Staff shortages plague Oregon foster care",
+   f: "A severe staffing shortage has caused high burnout and turnover.", u: "https://katu.com/news/local/caseworkers-say-staff-shortages-plague-oregon-foster-care" },
+ { p: "cw", st: ["Across the job"], t: "News", q: "medium", y: "", s: "KDKA (Pittsburgh)", h: "Child Youth Services caseworker shortage",
+   f: "The agency is about 75% staffed, so caseworkers carry higher caseloads, stress and burnout.", u: "https://www.cbsnews.com/amp/pittsburgh/news/kdka-investigates-child-youth-services-facing-big-shortage-of-caseworkers" },
+ { p: "cw", st: ["Across the job"], t: "News", q: "medium", y: "", s: "Center for Health Journalism", h: "West Virginia child welfare worker shortage",
+   f: "A chronic shortage of CPS workers. Even full staffing would leave a gap of about 136 workers.", u: "https://centerforhealthjournalism.org/our-work/reporting/ecosystem-dysfunction-west-virginia-still-has-child-welfare-worker-shortage-and" },
+ { p: "cw", st: ["Across the job"], t: "Review", q: "care", y: "", s: "Indeed, DCFS employee reviews", h: "Employee reviews",
+   f: "Reviewers call the work \"heartbreaking\" and say \"hard workers are given more work.\"", u: "https://www.indeed.com/cmp/Dcfs/reviews", n: "Mixed roles, not only caseworkers." },
+ { p: "cw", st: ["Across the job"], t: "Review", q: "care", y: "", s: "Glassdoor, Child Protective Services", h: "Case manager review",
+   f: "A case manager advises making sure to balance work and personal life.", u: "https://www.glassdoor.ca/Reviews/Employee-Review-Child-Protective-Services-E3730004-RVW51619562.htm" },
+ { p: "cw", st: ["Start the day"], t: "Forum", q: "care", y: "2025", s: "r/socialwork (mirror copy)", h: "Short-staffed caseworker",
+   f: "Assessments pile up while the worker is also scheduled to handle emergencies every other day.", u: "https://reddit.sentinel-team.org/posts/1po1u7c/snapshots/2025-12-16T21%3A20%3A18.898496Z", n: "Third-party mirror of Reddit." },
+ { p: "cw", st: ["Across the job"], t: "Forum", q: "care", y: "2026", s: "r/socialwork (mirror copy)", h: "Who gets blamed for burnout",
+   f: "Workers criticize the field for blaming burnout on the people struggling instead of on structural causes.", u: "https://reddit.sentinel-team.org/subreddits/socialwork/snapshots/2026-03-11T17%3A02%3A25.1943Z", n: "Third-party mirror of Reddit." },
+
+ { p: "kin", st: ["Get approved", "The first weeks"], t: "Advocacy", q: "medium", y: "2024", s: "Family Ties report (Generations United and partners), via PR Newswire", h: "Supporting unlicensed kin",
+   f: "Licensing a relative averages about 160 days across 45 agencies, and many states pay nothing toward the child's basic needs until the relative is licensed.", u: "https://prnewswire.com/news-releases/family-ties-urges-action-to-support-kin-caring-for-youth-involved-with-the-child-welfare-system-302090528.html" },
+ { p: "kin", st: ["Say yes", "Get approved"], t: "Advocacy", q: "care", y: "2023", s: "Reason", h: "Foster parent red tape",
+   f: "States can place a child with a relative in less than an hour, but relatives must finish the whole licensing process to get the same support as a non-kin foster parent.", u: "https://reason.com/?p=8238185", n: "Opinion outlet." },
+ { p: "kin", st: ["Get approved"], t: "Government", q: "strong", y: "", s: "West Virginia DHHR study, via WVPB", h: "Improving support for kinship families",
+   f: "Recommends a firm 90-day certification timeline and financial support during licensing, since only certified families get stipends.", u: "https://wvpublic.org/story/wvpb-news/w-va-dhhr-shares-study-on-ways-to-improve-support-for-kinship-foster-care-families/" },
+ { p: "kin", st: ["The first weeks"], t: "Research", q: "strong", y: "2024", s: "Child Trends", h: "State kinship care policies",
+   f: "Unlicensed caregivers do not get the same access to support as licensed kin or non-kin foster parents.", u: "https://childtrends.org/publications/state-kinship-care-policies-for-children-that-come-to-the-attention-of-child-welfare-agencies" },
+ { p: "kin", st: ["The first weeks"], t: "Advocacy", q: "care", y: "", s: "Native American Rights Fund (ICWA)", h: "Where the money goes",
+   f: "\"Foster families get paid, relatives caring for children get nothing.\"", u: "https://icwa.narf.org/?p=4416" },
+ { p: "kin", st: ["The first contact", "Say yes"], t: "News", q: "medium", y: "", s: "Portland Press Herald", h: "Kinship families in Maine",
+   f: "Kin placements often happen in an emergency, and families receive \"almost no support\" from the state or community.", u: "https://www.pressherald.com/?p=666519" },
+ { p: "kin", st: ["Weigh the decision", "Say yes"], t: "Government", q: "strong", y: "", s: "Australian Institute of Family Studies", h: "Grandparents caring for children need more support",
+   f: "Carers learned about the child's history and needs only after the child moved in. About a third of relative carers had any training, against nine in ten foster carers.", u: "https://aifs.gov.au/media-releases/grandparents-caring-vulnerable-children-say-they-need-more-support", n: "Australia." },
+ { p: "kin", st: ["Get approved"], t: "Government", q: "medium", y: "2025", s: "Minnesota Legislature, Quality Parenting Initiative letter", h: "Barriers to kin licensing",
+   f: "Relatives are overwhelmed, with limited free time, difficulty with paperwork, little access to technology and mistrust of the system, which delays licensing.", u: "https://www.lrl.mn.gov/archive/minutes/senate/2025/health/20250306/Health_20250306_SF1786-Quality-Parenting-Initiative-MN-Letter-Of-Support.pdf" },
+ { p: "kin", st: ["The first weeks"], t: "Advocacy", q: "medium", y: "", s: "American Bar Association", h: "Supporting successful kinship placements",
+   f: "Withholding or denying supports \"sets kinship caregivers up to fail.\"", u: "https://americanbar.org/content/dam/aba/publications/litigation_committees/childrights/kinship-placement/to-support-successful-kinship-placements-lawyers-must-advocate-for-appropriate-services.pdf" },
+ { p: "kin", st: ["The first weeks", "Everyday care"], t: "Government", q: "strong", y: "2025", s: "U.S. GAO (GAO-26-107658)", h: "Kinship families' financial pressures",
+   f: "Some caregivers delay their own health care and home repairs, or go back to work. Cost of living and mental health challenges have worsened since COVID-19.", u: "https://www.gao.gov/assets/gao-26-107658.pdf" },
+ { p: "kin", st: ["Get approved", "The first weeks"], t: "Research", q: "strong", y: "2021", s: "Survey of 362 grandparent caregivers (PMC)", h: "Licensing, support and distress",
+   f: "Licensing is what unlocks government financial help and services. The authors recommend emergency funds and tailored financial services.", u: "https://pmc.ncbi.nlm.nih.gov/articles/PMC8444840" },
+ { p: "kin", st: ["The first weeks"], t: "Research", q: "strong", y: "2019", s: "British Journal of Social Work, via Better Care Network", h: "Convenient yet neglected",
+   f: "Grandparents were willing to step in but \"received little support.\"", u: "https://bettercarenetwork.org/library/the-continuum-of-care/kinship-care/convenient-yet-neglected-the-role-of-grandparent-kinship-carers", n: "Australia." },
+ { p: "kin", st: ["Everyday care"], t: "Advocacy", q: "medium", y: "2023", s: "Generations United", h: "2023 State of Grandfamilies",
+   f: "Grandfamilies face mental health challenges from compounded trauma and limited access to wellness supports.", u: "https://www.gu.org/resources/2023-state-of-grandfamilies-report/" },
+ { p: "kin", st: ["Everyday care"], t: "Advocacy", q: "medium", y: "2024", s: "Generations United", h: "2024 State of Grandfamilies",
+   f: "About 2.5 million children raised in grandfamilies face overwhelming barriers to education.", u: "https://www.gu.org/press_releases/new-report-exposes-overwhelming-educational-barriers-faced-by-kinship-and-grandfamilies/" },
+ { p: "kin", st: ["Weigh the decision"], t: "Advocacy", q: "care", y: "", s: "Elder Justice NY", h: "Child support and services for relative caregivers",
+   f: "Many caregivers don't know help exists, such as the Non-Parent Caregiver Grant.", u: "https://www.elderjusticeny.org/blog/obtaining-child-support-and-services-for-relative-caregivers" },
+ { p: "kin", st: ["The first weeks"], t: "Forum", q: "care", y: "", s: "adoption.com forums", h: "Kinship care and not a licensed foster parent",
+   f: "Kin caregivers ask whether they get reimbursed for anything without a foster license.", u: "https://adoption.com/forums/thread/382518/if-you-039-re-doing-kinship-care-and-not-a-licensed-fp", n: "Thread found by title; full text not read." },
+ { p: "kin", st: ["Weigh the decision"], t: "Forum", q: "care", y: "", s: "Mumsnet (UK)", h: "Is she entitled to financial help?",
+   f: "A relative caring for a child asks what financial help she can get.", u: "https://www.mumsnet.com/talk/fostering/5031754-is-she-entitled-to-financial-help", n: "UK." },
+
+ { p: "par", st: ["Inquire"], t: "Research", q: "strong", y: "2020", s: "AdoptUSKids (Children's Bureau)", h: "Barriers families report",
+   f: "Over three-quarters of 3,785 families hit at least one barrier. Not hearing back from staff is one of the most consistent complaints.", u: "https://professionals.adoptuskids.org/?p=2148" },
+ { p: "par", st: ["Complete requirements"], t: "Research", q: "medium", y: "2008", s: "SSWR 2008, Collaboration to AdoptUsKids", h: "Why families discontinue",
+   f: "Excessive paperwork, red tape and process delays were the greatest barriers for families who stopped.", u: "https://sswr.confex.com/sswr/2008/techprogram/P9113.HTM" },
+ { p: "par", st: ["Inquire"], t: "Research", q: "medium", y: "2005", s: "Harvard Kennedy School", h: "Listening to parents",
+   f: "Steep attrition from the first call to adoption. The first agency call is a critical point.", u: "https://www.hks.harvard.edu/publications/listening-parents-overcoming-barriers-adoption-children-foster-care" },
+ { p: "par", st: ["Explore", "Apply"], t: "Research", q: "medium", y: "2025", s: "Children's Home Society of North Carolina", h: "Motivators and barriers to licensure",
+   f: "Financial concerns top the barriers, and the licensing process was described as \"intimidating, complicated, and unclear.\"", u: "https://ml.globenewswire.com/Resource/Download/c59f1658-d908-4dd7-bd68-7757ec0c4a67" },
+ { p: "par", st: ["Apply"], t: "Research", q: "medium", y: "", s: "University of Memphis", h: "Faith-based partnerships and foster parent satisfaction",
+   f: "A very large share of families drop out of licensing early \"due to frustration or a lack of support.\"", u: "https://digitalcommons.memphis.edu/facpubs/8988" },
+ { p: "par", st: ["Complete requirements"], t: "Research", q: "medium", y: "2017", s: "Bryn Mawr College dissertation", h: "Attrition during licensing",
+   f: "Exploratory study of prospective foster parents who leave during licensing.", u: "https://repository.brynmawr.edu/dissertations/164", n: "Not generalizable, per the author." },
+ { p: "par", st: ["Explore"], t: "Advocacy", q: "care", y: "", s: "adoption.org", h: "How long it takes to become a foster parent",
+   f: "Typically 3 to 6 months, with much of the red tape outside the applicant's control.", u: "https://adoption.org/long-take-become-foster-parent" },
+ { p: "par", st: ["Home study"], t: "Forum", q: "care", y: "2025", s: "r/fosterit (mirror copy)", h: "How long is a home study supposed to take?",
+   f: "A home study stalled for nine months. The agency kept saying it was close but never explained. The cause was a backlogged background check.", u: "https://reddit.birdcat.cafe/r/fosterit/comments/1lfuto2/how_long_is_a_home_study_supposed_to_take", n: "Third-party mirror of Reddit." },
+ { p: "par", st: ["Approval and wait"], t: "Forum", q: "care", y: "2025", s: "r/Fosterparents (mirror copy)", h: "Questions about waits",
+   f: "Waits mostly affect homes for infants and young children. Another parent estimates 3 to 6 months start to finish, depending on staffing.", u: "https://axebps-redlib.hf.space/r/Fosterparents/comments/1jaj1oq/questions", n: "Third-party mirror of Reddit." },
+ { p: "par", st: ["Approval and wait"], t: "Forum", q: "care", y: "", s: "The Bump forums", h: "Waiting after training",
+   f: "A Connecticut family had waited more than a year after training. Others advised going to the caseworker's supervisor.", u: "https://forums.thebump.com/discussion/comment/66213476" },
+ { p: "par", st: ["Complete requirements"], t: "Forum", q: "care", y: "", s: "The Bump forums", h: "Paperwork on a desk",
+   f: "A family found their paperwork had been sitting on a coworker's desk for weeks.", u: "https://forums.thebump.com/discussion/comment/6498725" },
+ { p: "par", st: ["Approval and wait"], t: "Forum", q: "care", y: "", s: "The Bump forums", h: "License promised by Christmas",
+   f: "The caseworker expected a response before Christmas. Nothing came, so the family called the state office.", u: "https://forums.thebump.com/discussion/comment/70780339" },
+ { p: "par", st: ["After placement and adoption"], t: "Forum", q: "care", y: "", s: "adoption.com forums", h: "I'm so confused",
+   f: "About 15 months from foster application to finalized adoption. A license comes on time only \"if there were no mistakes.\"", u: "https://adoption.com/forums/thread/399286/i-039-m-so-confused" },
+ { p: "par", st: ["Get matched"], t: "Government", q: "strong", y: "2023", s: "Arizona Auditor General", h: "DCS 36-month follow-up",
+   f: "Foster parent feedback shows a need for better customer service and complete, updated placement information about each child.", u: "https://www.azauditor.gov/sites/default/files/2023-11/19-113_36-Mth_Followup.pdf" },
+ { p: "par", st: ["Get matched", "After placement and adoption"], t: "Government", q: "medium", y: "2015", s: "Nevada (Clark County) recruitment workgroup", h: "Foster parent frustrations",
+   f: "Foster parents get calls from several workers for different children, and a child's history does not follow them accurately.", u: "https://www.jitnevada.org/documents/clark/qpiWorkgroups/Recruitment_11-03-2015.pdf" },
+ { p: "par", st: ["After placement and adoption"], t: "Government", q: "strong", y: "2005", s: "HHS ASPE", h: "Understanding foster parenting",
+   f: "37% of former foster parents cited unsatisfactory interactions with workers and agency insensitivity as a reason for quitting.", u: "https://webarchive.library.unt.edu/eot2008/20080916015212/http://aspe.hhs.gov/hsp/05/foster-parenting/index.htm" },
+ { p: "par", st: ["After placement and adoption"], t: "Research", q: "strong", y: "2001", s: "Social Service Review (University of Chicago)", h: "Why foster families quit",
+   f: "Reasons for quitting include lack of agency support, poor communication with caseworkers and no say in the child's future.", u: "https://www.journals.uchicago.edu/toc/ssr/2001/75/1" },
+ { p: "par", st: ["After placement and adoption"], t: "Advocacy", q: "care", y: "2021", s: "Nightlight Christian Adoptions", h: "Why foster families quit in the first year",
+   f: "Estimates that one-half to two-thirds of foster parents close their homes within a year of approval.", u: "https://nightlight.org/2021/11/why-do-foster-families-quit-in-the-first-year/", n: "Not peer reviewed. Other estimates say 30 to 50%." },
+ { p: "par", st: ["After placement and adoption"], t: "Government", q: "strong", y: "2024", s: "AFCARS report (HHS), via Better Care Network", h: "Time in care",
+   f: "Median time in care is 12.7 months.", u: "https://bettercarenetwork.org/sites/default/files/afcarsreport24.pdf" },
+ { p: "par", st: ["After placement and adoption"], t: "News", q: "medium", y: "", s: "The Imprint", h: "Focus on the figures: foster care to adoption",
+   f: "Children waiting for adoption fell to 108,000 by 2014, with a median wait of 8.7 months.", u: "https://imprintnews.org/featured/focus-on-the-figures-foster-care-to-adoption/6472" },
+ { p: "par", st: ["After placement and adoption"], t: "News", q: "medium", y: "", s: "Bklyner", h: "New York adoption delays",
+   f: "A former foster parent describes how court scheduling delays affected his family's ability to adopt.", u: "https://bklyner.com/new-york-adoption" },
+ { p: "par", st: ["Home study"], t: "Government", q: "strong", y: "2005", s: "Kansas Legislative Post Audit", h: "Adoption delays audit",
+   f: "Most major delays involved completing the home study. Adopting parents caused many of the unexplained delays.", u: "https://www.kslpa.gov/wp-content/uploads/2019/08/r-05-03.pdf" },
+ { p: "par", st: ["After placement and adoption"], t: "Government", q: "medium", y: "2005", s: "California Assembly bill analysis (AB 1638)", h: "Finalization delays",
+   f: "A San Diego foster parent waited four years for adoption to be finalized. Delays postpone permanence for children.", u: "https://www.leginfo.ca.gov/pub/05-06/bill/asm/ab_1601-1650/ab_1638_cfa_20050411_140431_asm_comm.html" },
+ { p: "par", st: ["After placement and adoption"], t: "News", q: "medium", y: "2004", s: "The Daily Record (Baltimore)", h: "Delays in adoption of abused and neglected children",
+   f: "Finalization can take years. Frustration has led some would-be adoptive parents to change their minds.", u: "https://thedailyrecord.com/2004/06/30/guest-column-delays-in-the-adoption-of-abused-and-neglected-children-in-baltimore-city/" },
+ { p: "par", st: ["After placement and adoption"], t: "News", q: "medium", y: "2000", s: "NPR", h: "Adoption process frustrates foster parents",
+   f: "Reports on how bogged down adoption has become for foster parents.", u: "https://www.npr.org/2000/03/07/1071264/adoption-process-frustrates-foster-parents" },
+ { p: "par", st: ["After placement and adoption"], t: "Research", q: "medium", y: "", s: "IU Indianapolis ScholarWorks", h: "\"A piece of you is gone\"",
+   f: "Foster parents describe the grief of pre-adoptive placements that fell through.", u: "https://scholarworks.indianapolis.iu.edu/items/1487ea51-a9e4-4af1-8d57-b6b95846d631/full" }
+];
+
+function renderVoices() {
+  var QL = { strong: "Strong", medium: "Medium", care: "Use with care" };
+  var TC = { cw: "t-a", kin: "t-c", par: "t-b" };
+  var h = "";
+  ["cw", "kin", "par"].forEach(function (p) {
+    var items = EV.filter(function (e) { return e.p === p; });
+    h += "<details class='persona " + TC[p] + "'><summary><b>" + EV_PERSONA[p] + "</b><span class='chip none'>" + items.length + " sources</span><span class='small muted'>by journey stage</span></summary><div class='pbody'>";
+    EV_STAGES[p].forEach(function (s) {
+      var st = items.filter(function (e) { return e.st.indexOf(s) > -1; });
+      h += "<div class='sub'><span class='mono'>" + s + " · " + (st.length || "no") + " source" + (st.length === 1 ? "" : "s") + "</span>";
+      h += st.length ? "<ul class='tight src'>" + st.map(function (e) {
+        return "<li>" + e.f + " <a href='" + e.u + "' target='_blank' rel='noopener'>" + e.s + "</a> <span class='chip " + (e.q === "strong" ? "" : (e.q === "care" ? "demo" : "none")) + "'>" + QL[e.q] + "</span> <span class='chip none'>" + e.t + "</span></li>";
+      }).join("") + "</ul>" : "<p class='small muted'>Nothing found yet. A gap for user research.</p>";
+      h += "</div>";
+    });
+    h += "</div></details>";
+  });
+  document.getElementById("voiceList").innerHTML = h;
+  document.getElementById("voiceCount").textContent = EV.length + " sources across the three priority personas. Expand a persona to see every source by journey stage.";
+}
+renderVoices(); renderPersonas(); renderJourneys(); renderModules(); renderMatrix(); renderStats(); renderGaps(); renderPriority(); setCat("A");
 
 document.getElementById("openAll").addEventListener("click", function () { document.querySelectorAll("details.persona").forEach(function (d) { d.open = true; }); });
 document.getElementById("closeAll").addEventListener("click", function () { document.querySelectorAll("details.persona").forEach(function (d) { d.open = false; }); });
