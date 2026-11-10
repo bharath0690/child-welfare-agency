@@ -12,6 +12,26 @@ import judges  # noqa: E402
 from binti import llm  # noqa: E402
 
 
+class Block:
+    def __init__(self, type, text=""):
+        self.type, self.text = type, text
+
+
+class FakeClaude:
+    """Stands in for anthropic.Anthropic(): records the request, returns a canned response."""
+    def __init__(self, text='{"grade": 5, "reason": "Warm and clear."}', stop="end_turn"):
+        self.calls, self.text, self.stop = [], text, stop
+        self.beta = self
+        self.messages = self
+
+    def create(self, **kw):
+        self.calls.append(kw)
+        r = mock.Mock()
+        r.stop_reason, r.content = self.stop, [Block("thinking"), Block("text", self.text)]
+        return r
+
+
+@mock.patch.dict(os.environ, {"JUDGE_PROVIDER": "deepseek"})
 class TestJudges(unittest.TestCase):
     def test_rubric_is_agents_md(self):
         section, tone = judges.rubric("kin")
@@ -22,6 +42,7 @@ class TestJudges(unittest.TestCase):
 
     def test_no_key_no_score(self):
         with mock.patch.dict(os.environ, {}, clear=True):
+            self.assertIsNone(judges.provider())
             self.assertIsNone(judges.judge("helpfulness", "kin", "How long until I get paid?", "Day 6..."))
 
     def test_grade_normalized_and_prompt_carries_rubric(self):
@@ -54,6 +75,36 @@ class TestJudges(unittest.TestCase):
         from binti import agent
         core, _ = agent.system_prompt_parts("kin")
         self.assertIn("## Helpful and kind", core)
+
+
+class TestClaudeJudge(unittest.TestCase):
+    def setUp(self):
+        self.env = mock.patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test", "JUDGE_PROVIDER": ""})
+        self.env.start()
+
+    def tearDown(self):
+        self.env.stop()
+        judges._claude = None
+
+    def test_claude_preferred_when_key_set(self):
+        self.assertEqual(judges.provider("deepseek-key"), "anthropic")
+        self.assertEqual(judges.model_label(), "claude-opus-5-5")
+
+    def test_request_shape_and_parse(self):
+        judges._claude = fake = FakeClaude()
+        r = judges.judge("helpfulness", "kin", "How long until I get paid?", "Day 6 since placement...")
+        self.assertEqual(r, {"grade": 5, "score": 1.0, "reason": "Warm and clear."})
+        kw = fake.calls[0]
+        self.assertEqual(kw["model"], "claude-opus-5-5")
+        self.assertEqual(kw["output_config"]["format"]["schema"], judges.GRADE_SCHEMA)
+        self.assertEqual((kw["fallbacks"], kw["betas"]), ("default", ["server-side-fallback-2026-07-01"]))
+        self.assertNotIn("temperature", kw)  # rejected by current Claude models
+        self.assertIn("HELPFULNESS", kw["system"])
+        self.assertIn("calm, gentle", kw["system"])
+
+    def test_refusal_means_no_score(self):
+        judges._claude = FakeClaude(stop="refusal")
+        self.assertIsNone(judges.judge("helpfulness", "kin", "q", "a"))
 
 
 if __name__ == "__main__":

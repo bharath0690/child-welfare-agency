@@ -240,7 +240,7 @@ flowchart TB
 | Eval | Feature | Source of truth |
 |---|---|---|
 | Draft accuracy, edit distance | Notes, pre-fill, reports | The note the worker signed. The prototype logs approval and edit similarity per draft as online signals |
-| Helpfulness, politeness and empathy | All chat | LLM judge (`evals/judges.py`) graded against the "Helpful and kind" section and each persona's Tone line in `AGENTS.md`, the same text the agent is given. Check it against human grades before trusting it as a release bar |
+| Helpfulness, politeness and empathy | All chat | LLM judge (`evals/judges.py`) graded against the "Helpful and kind" section and each persona's Tone line in `AGENTS.md`, the same text the agent is given. The judge is Claude when `ANTHROPIC_API_KEY` is set, else DeepSeek. A judge from a different vendor than the app's model avoids grading its own answers. Check it against human grades before trusting it as a release bar |
 | Fault-language catch rate and false alarms | Language check | Set labeled by supervisors |
 | Citation accuracy, abstain rate | Law Q&A | Golden set per jurisdiction, written with counsel |
 | Translation quality | Outreach | Bilingual reviewers |

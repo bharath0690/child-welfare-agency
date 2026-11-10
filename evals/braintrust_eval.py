@@ -14,7 +14,8 @@ Scores per case:
   <persona>_pass      the same pass score, split by persona group so each one gets its own pass bar (architecture section 7)
   helpfulness         LLM judge, chat cases only (evals/judges.py). Rubric read from AGENTS.md "Helpful and kind"
   politeness_empathy  LLM judge, chat cases only, same rubric plus the persona's Tone line
-The judges need JUDGE_API_KEY or DEEPSEEK_API_KEY; without one, their scores are left blank. --no-judge skips them.
+The judges use Claude when ANTHROPIC_API_KEY is set (pip install -r evals/requirements.txt), else DeepSeek with
+JUDGE_API_KEY or DEEPSEEK_API_KEY; without a key their scores are left blank. --no-judge skips them.
 
 Exit code 1 if any critical case fails.
 """
@@ -27,7 +28,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "evals"))
 # Keep the key for the judges before run_evals drops DEEPSEEK_API_KEY (scripted mode must not call the model for answers)
-JUDGE_KEY = None if "--no-judge" in sys.argv else (os.environ.get("JUDGE_API_KEY") or os.environ.get("DEEPSEEK_API_KEY"))
+NO_JUDGE = "--no-judge" in sys.argv
+JUDGE_KEY = os.environ.get("JUDGE_API_KEY") or os.environ.get("DEEPSEEK_API_KEY")
 import run_evals  # noqa: E402  (also drops DEEPSEEK_API_KEY unless --live)
 import judges  # noqa: E402
 
@@ -78,7 +80,7 @@ def persona_pass(input, output, expected):
 
 
 def _judged(metric, input, output):
-    if input["type"] != "chat" or not JUDGE_KEY or not isinstance(output.get("got"), str):
+    if input["type"] != "chat" or NO_JUDGE or judges.provider(JUDGE_KEY) is None or not isinstance(output.get("got"), str):
         return None
     r = judges.judge(metric, input.get("persona"), input["input"], output["got"], context=input.get("why"), api_key=JUDGE_KEY)
     return None if r is None else braintrust.Score(name=metric, score=r["score"], metadata={"grade": r["grade"], "reason": r["reason"]})
@@ -109,7 +111,7 @@ def main():
         data=load,
         task=task,
         scores=[golden_pass, critical_gate, persona_pass, helpfulness, politeness_empathy],
-        metadata={"mode": mode, "golden_set": "evals/golden.json", "commit": git_commit(), "judges": bool(JUDGE_KEY)},
+        metadata={"mode": mode, "golden_set": "evals/golden.json", "commit": git_commit(), "judge_model": None if NO_JUDGE else judges.model_label(JUDGE_KEY)},
         max_concurrency=1,  # each case reseeds one shared in-memory database
         no_send_logs=LOCAL,
     )

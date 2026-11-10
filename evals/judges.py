@@ -6,8 +6,12 @@ the same text the agent gets in its system prompt, so what the agent is told and
 Each judge returns a 1 to 5 grade and a one-sentence reason. Braintrust shows it as a 0 to 1 score
 ((grade - 1) / 4), so 5 is 100% and 3 is 50%.
 
-The judge calls the model through binti/llm.py, the same model gateway the app uses. Key: JUDGE_API_KEY, else
-DEEPSEEK_API_KEY. Without a key the judges return None and Braintrust leaves the score blank.
+Judge model (first match wins):
+  ANTHROPIC_API_KEY set   Claude, through the official `anthropic` SDK (pip install -r evals/requirements.txt).
+                          Model JUDGE_MODEL, default claude-opus-5-5. Structured output guarantees the JSON shape.
+  JUDGE_API_KEY or        DeepSeek, through binti/llm.py (the app's own model gateway).
+  DEEPSEEK_API_KEY
+JUDGE_PROVIDER=anthropic|deepseek forces one. Without a key the judges return None and Braintrust leaves the score blank.
 Use: evals/braintrust_eval.py.
 """
 import json
@@ -58,14 +62,71 @@ def rubric(persona):
     return section, tone
 
 
+GRADE_SCHEMA = {
+    "type": "object",
+    "properties": {"grade": {"type": "integer", "enum": [1, 2, 3, 4, 5]}, "reason": {"type": "string"}},
+    "required": ["grade", "reason"],
+    "additionalProperties": False,
+}
+
+
 def _key():
     return (os.environ.get("JUDGE_API_KEY") or os.environ.get("DEEPSEEK_API_KEY") or "").strip()
 
 
+def provider(deepseek_key=None):
+    """'anthropic', 'deepseek' or None (no judge available)."""
+    forced = os.environ.get("JUDGE_PROVIDER", "").strip().lower()
+    has_claude = bool(os.environ.get("ANTHROPIC_API_KEY", "").strip())
+    has_deepseek = bool(deepseek_key or _key())
+    if forced == "anthropic":
+        return "anthropic" if has_claude else None
+    if forced == "deepseek":
+        return "deepseek" if has_deepseek else None
+    return "anthropic" if has_claude else "deepseek" if has_deepseek else None
+
+
+def model_label(deepseek_key=None):
+    return {"anthropic": os.environ.get("JUDGE_MODEL", "claude-opus-5-5"), "deepseek": llm.model_name()}.get(provider(deepseek_key))
+
+
+_claude = None
+
+
+def _ask_claude(system, user):
+    """Grade with Claude. Returns the parsed {"grade", "reason"} dict, or None on an API error or a refusal."""
+    global _claude
+    import anthropic
+    if _claude is None:
+        _claude = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY
+    try:
+        response = _claude.beta.messages.create(
+            model=os.environ.get("JUDGE_MODEL", "claude-opus-5-5"),
+            max_tokens=4000,
+            system=system,
+            messages=[{"role": "user", "content": user}],
+            output_config={"effort": "medium", "format": {"type": "json_schema", "schema": GRADE_SCHEMA}},
+            betas=["server-side-fallback-2026-07-01"],
+            fallbacks="default",  # a policy decline is re-run on a fallback model inside the same call
+        )
+    except (anthropic.APIStatusError, anthropic.APIConnectionError):
+        return None
+    if response.stop_reason in ("refusal", "max_tokens"):
+        return None
+    text = next((b.text for b in response.content if b.type == "text"), None)
+    return json.loads(text) if text else None
+
+
+def _ask_deepseek(system, user, key):
+    msg = llm.chat([{"role": "system", "content": system}, {"role": "user", "content": user}],
+                   temperature=0, max_tokens=200, json_mode=True, api_key=key)
+    return json.loads(msg.get("content") or "{}")
+
+
 def judge(metric, persona, question, reply, context=None, api_key=None):
     """Return {"grade": 1-5, "score": 0-1, "reason": str}, or None without a key or on a model failure."""
-    key = api_key or _key()
-    if not key or not reply:
+    which = provider(api_key)
+    if which is None or not reply:
         return None
     section, tone = rubric(persona)
     who = PERSONA_NAME.get(persona, persona)
@@ -77,9 +138,7 @@ def judge(metric, persona, question, reply, context=None, api_key=None):
             + (f"What a good reply must do here (from the eval case):\n{context}\n\n" if context else "")
             + f"Binti AI's reply:\n{reply}")
     try:
-        msg = llm.chat([{"role": "system", "content": system}, {"role": "user", "content": user}],
-                       temperature=0, max_tokens=200, json_mode=True, api_key=key)
-        out = json.loads(msg.get("content") or "{}")
+        out = _ask_claude(system, user) if which == "anthropic" else _ask_deepseek(system, user, api_key or _key())
         grade = int(out["grade"])
     except (llm.LLMError, ValueError, KeyError, TypeError):
         return None
