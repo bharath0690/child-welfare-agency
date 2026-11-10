@@ -24,7 +24,7 @@ python3 -m unittest discover -s tests -v
 ```bash
 python3 evals/run_evals.py      # 49-case golden eval set (see evals/README.md)
 ```
-You need Python 3.10 or later. There's nothing to install: the backend uses only the standard library.
+You need Python 3.10 or later. The backend uses only the standard library. The one optional package, `braintrust`, is for logging and eval experiments (below).
 
 ## Turn on the live model (DeepSeek)
 Without a key, the app runs in **scripted mode**. It uses the same gateway, rules and guardrails, and fills in the wording from templates. With a key, the persona agents call DeepSeek with tool calling.
@@ -35,6 +35,14 @@ Without a key, the app runs in **scripted mode**. It uses the same gateway, rule
 4. Check that it worked: the blue bar shows **AI: live · deepseek-chat**, or open `/api/health`.
 
 Only fictional data is in this prototype. Before any real data goes to a model vendor, settle the vendor's terms and data residency. This is open question 3 in the architecture doc.
+
+## Logs and evals in Braintrust (optional)
+With `BRAINTRUST_API_KEY` set and `pip install -r requirements.txt`, the app sends every AI request to the Braintrust project `binti-ai-prototype` (override with `BRAINTRUST_PROJECT`). Without the key, nothing is sent and nothing changes.
+
+- **Production logs (`binti/observability.py`):** one trace per AI request (chat, panel open, workflows, family messages, approvals). Each trace has a span for every model call, with token counts, and for every gateway tool call, with the policy decision and the field names returned. It also gets three human signals: draft ratings (`viewer_rating`), approve or reject (`approved`), and how much the worker changed the draft before signing (`edit_similarity`). A safety disclosure is logged as `[redacted: safety disclosure]`. `BRAINTRUST_LOG_CONTENT=false` logs metadata only. Logging failures never break a request.
+- **On Vercel:** add `BRAINTRUST_API_KEY` under Settings, then Environment Variables, and redeploy. Vercel installs `requirements.txt` on its own.
+- **Evals as experiments:** `python3 evals/braintrust_eval.py` runs the golden set and records one experiment per run, with `golden_pass`, `critical_gate` and a pass score per persona (`caseworker_pass`, `kin_pass`, `parent_pass`). Add `--live` to use the model, or `--local` to try it without sending anything.
+- **CI:** `.github/workflows/evals.yml` runs the unit tests and the golden gate on every pull request and push to main. If the repo has a `BRAINTRUST_API_KEY` secret, it also records the run in Braintrust.
 
 ## Deploy on Vercel
 1. Import the GitHub repo at vercel.com/new. Framework preset: **Other**. Leave the build command empty.
@@ -84,4 +92,5 @@ evals/golden.json, run_evals.py    49-case golden eval set and runner (release g
 | `POST /api/messages` | A family message to their worker, with a reply deadline and supervisor escalation |
 | `POST /api/workflows/{visit-note,prefill,language-check,court-report,first-contact,inquiry-triage,application-help}` | Runs a workflow; writes become proposals |
 | `POST /api/proposals/{id}` | A person approves (and may edit) or rejects an AI draft |
+| `POST /api/feedback` | A viewer's rating of a draft (`proposal_id`) or answer (`trace_id`), sent to Braintrust |
 | `GET /api/audit?case_id=` | Gateway audit log for a case |

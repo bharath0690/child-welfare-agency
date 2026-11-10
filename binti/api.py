@@ -9,6 +9,10 @@ import traceback
 from urllib.parse import parse_qs
 
 from . import agent, db, gateway, llm, stages, workflows
+from . import observability as obs
+
+# POST paths logged to Braintrust as one trace each when BRAINTRUST_API_KEY is set (binti/observability.py)
+TRACED = ("/api/ai/", "/api/workflows/", "/api/messages", "/api/proposals/")
 
 ROUTES = []
 
@@ -192,6 +196,29 @@ def proposal(req, pid):
     return gateway.decide(ident_of(req), int(pid), b.get("op", ""), b.get("edited"))
 
 
+RATING_SCORE = {"ok": 1.0, "edit": 0.5, "bad": 0.0, "up": 1.0, "down": 0.0}
+
+
+@route("POST", "/api/feedback")
+def feedback(req):
+    """A viewer's rating of an AI draft or answer, attached to the Braintrust trace that produced it."""
+    b, ident = req["json"], ident_of(req)
+    rating = b.get("rating")
+    if rating not in RATING_SCORE:
+        raise gateway.GatewayError("bad_args", "rating must be one of " + ", ".join(RATING_SCORE))
+    trace_id = b.get("trace_id")
+    if b.get("proposal_id") is not None:
+        p = db.row("SELECT object_type, object_id, trace_id FROM proposals WHERE id=?", (int(b["proposal_id"]),))
+        mine = p and ((p["object_type"] == "case" and p["object_id"] in ident.case_ids) or
+                      (p["object_type"] == "application" and p["object_id"] == ident.applicant_id))
+        if not mine:
+            raise gateway.GatewayError("not_found", "No draft with that id.")
+        trace_id = p["trace_id"]
+    sent = obs.feedback(trace_id, {"viewer_rating": RATING_SCORE[rating]}, comment=(b.get("comment") or "")[:500] or None,
+                        metadata={"persona": ident.persona, "user": ident.user_id, "label": (b.get("label") or "")[:120]})
+    return {"logged": sent}
+
+
 @route("GET", "/api/audit")
 def audit(req):
     ident = ident_of(req)
@@ -229,7 +256,16 @@ def app(environ, start_response):
         for m, rx, fn in ROUTES:
             hit = rx.match(path.rstrip("/") or "/")
             if hit and m == method:
-                out, status = fn({"headers": headers, "json": body, "query": query}, **hit.groupdict()), 200
+                req = {"headers": headers, "json": body, "query": query}
+                if m == "POST" and path.startswith(TRACED):
+                    with obs.request_trace(f"{m} {path}", headers.get("x-persona") or "caseworker", headers.get("x-user"), body) as rec:
+                        out = fn(req, **hit.groupdict())
+                        rec["output"] = out
+                        if rec["trace_id"] and isinstance(out, dict):
+                            out["trace_id"] = rec["trace_id"]
+                else:
+                    out = fn(req, **hit.groupdict())
+                status = 200
                 break
         else:
             raise HTTPError(404 if not any(rx.match(path) for _, rx, _ in ROUTES) else 405, "Not found")

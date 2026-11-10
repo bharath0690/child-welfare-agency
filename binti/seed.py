@@ -48,7 +48,7 @@ CREATE TABLE case_memory (id INTEGER PRIMARY KEY, object_type TEXT, object_id TE
 CREATE TABLE case_actions (id INTEGER PRIMARY KEY, case_id TEXT, key TEXT, title TEXT, why TEXT, source TEXT, skill TEXT,
   ui TEXT, due_on TEXT, score REAL, status TEXT, pinned INTEGER DEFAULT 0, rank INTEGER DEFAULT 0, updated_at TEXT,
   UNIQUE(case_id, key));
-CREATE TABLE proposals (id INTEGER PRIMARY KEY, idem_key TEXT UNIQUE, object_type TEXT, object_id TEXT, kind TEXT,
+CREATE TABLE proposals (id INTEGER PRIMARY KEY, trace_id TEXT, idem_key TEXT UNIQUE, object_type TEXT, object_id TEXT, kind TEXT,
   payload TEXT, summary TEXT, status TEXT, created_by TEXT, created_at TEXT, decided_by TEXT, decided_at TEXT);
 CREATE TABLE escalations (id INTEGER PRIMARY KEY, object_type TEXT, object_id TEXT, persona TEXT, user_id TEXT, text TEXT,
   routed_to TEXT, status TEXT, created_at TEXT);

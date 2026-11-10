@@ -28,3 +28,4 @@ AI runs scripted by default and goes live with `DEEPSEEK_API_KEY`. See `README.m
 4. SMS channel for kin (Phase 1 in the design; needs a messaging provider). Counsel sign-off on care-needs sharing.
 5. Persistence on Vercel (a hosted database) and rate limits per user.
 6. Review the three drilldown journeys and the Cases workspace with the owner.
+7. Braintrust: production traces (`binti/observability.py`) and eval experiments (`evals/braintrust_eval.py`, CI) are wired. They turn on with `BRAINTRUST_API_KEY` in Vercel and as a GitHub secret.

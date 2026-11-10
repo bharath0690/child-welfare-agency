@@ -613,7 +613,12 @@
     },
     approve: function (pid) { decide(pid, "approve"); },
     reject: function (pid) { decide(pid, "reject"); },
-    rate: function (arg) { var x = arg.split("|"); H.S.rate[x[0]] = H.S.rate[x[0]] === x[1] ? undefined : x[1]; if (!H.S.rate[x[0]]) delete H.S.rate[x[0]]; H.renderDrawer(); render(); },
+    rate: function (arg) {
+      var x = arg.split("|"); H.S.rate[x[0]] = H.S.rate[x[0]] === x[1] ? undefined : x[1]; if (!H.S.rate[x[0]]) delete H.S.rate[x[0]];
+      var pid = /^(?:prop|app)-(\d+)$/.exec(x[0]);  // send the rating to the trace that made the draft (no-op without Braintrust)
+      if (pid && H.S.rate[x[0]]) api("/feedback", { proposal_id: +pid[1], rating: x[1] }).catch(function () {});
+      H.renderDrawer(); render();
+    },
     "app-help": function (field) {
       api("/workflows/application-help", { field: field, notes: B.notes || "" }).then(function (r) {
         if (r.error) return toast(r.error); B.appDraft = r; render();

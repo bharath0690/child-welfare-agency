@@ -8,12 +8,14 @@ Every tool call, from the model or from the scripted fallback, goes through `cal
   5. audit log                      (inputs, fields returned, decision)
 Writes never change the record. They create an idempotent proposal that a human approves.
 """
+import difflib
 import hashlib
 import json
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 
 from . import db
+from . import observability as obs
 from .avatars import svg
 
 PERSONAS = ("caseworker", "applicant", "kin", "foster")
@@ -260,9 +262,9 @@ def _propose(ident, obj_type, obj_id, kind, payload, summary):
     existing = db.row("SELECT id, status FROM proposals WHERE idem_key=?", (key,))
     if existing:
         return {"proposal_id": existing["id"], "status": existing["status"], "idempotent_replay": True}
-    pid = db.execute("INSERT INTO proposals (idem_key, object_type, object_id, kind, payload, summary, status, created_by, "
-                     "created_at) VALUES (?,?,?,?,?,?,?,?,?)",
-                     (key, obj_type, obj_id, kind, json.dumps(payload), summary, "pending",
+    pid = db.execute("INSERT INTO proposals (trace_id, idem_key, object_type, object_id, kind, payload, summary, status, created_by, "
+                     "created_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                     (obs.current_trace_id(), key, obj_type, obj_id, kind, json.dumps(payload), summary, "pending",
                       f"binti-ai for {ident.persona}:{ident.user_id}", _now()))
     return {"proposal_id": pid, "status": "pending", "diff": payload, "needs": approver(kind)}
 
@@ -673,17 +675,23 @@ def _audit(ident, tool, args, decision, reason="", result=None):
 
 def call(ident: Identity, name: str, args: dict = None):
     args = dict(args or {})
-    if name not in TOOLS or ident.persona not in TOOLS[name][1]:
-        _audit(ident, name, args, "deny", "not on persona allowlist")
-        raise GatewayError("not_allowed", f"Tool {name!r} is not available to the {ident.persona} agent.")
-    try:
-        args = _validate(name, args)
-        result = TOOLS[name][5](ident, args)
-    except GatewayError as e:
-        _audit(ident, name, args, "deny", e.message)
-        raise
-    _audit(ident, name, args, "allow", "", result)
-    return result
+    with obs.child_span("tool: " + name, "tool", input=args, metadata={"persona": ident.persona}) as log:
+        if name not in TOOLS or ident.persona not in TOOLS[name][1]:
+            _audit(ident, name, args, "deny", "not on persona allowlist")
+            log(metadata={"decision": "deny", "reason": "not on persona allowlist"})
+            raise GatewayError("not_allowed", f"Tool {name!r} is not available to the {ident.persona} agent.")
+        try:
+            args = _validate(name, args)
+            result = TOOLS[name][5](ident, args)
+        except GatewayError as e:
+            _audit(ident, name, args, "deny", e.message)
+            log(metadata={"decision": "deny", "reason": e.message})
+            raise
+        _audit(ident, name, args, "allow", "", result)
+        # Log which fields came back, not their values: the disclosure matrix already decided what the agent may see.
+        log(output={"fields": sorted(result.keys()) if isinstance(result, dict) else f"{len(result)} rows" if isinstance(result, list) else type(result).__name__},
+            metadata={"decision": "allow"})
+        return result
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -707,8 +715,15 @@ def decide(ident: Identity, proposal_id: int, op: str, edited=None):
         if isinstance(edited, dict):
             payload.update({k: v for k, v in edited.items() if k in payload})
         _materialize(ident, p, payload)
+    original = json.loads(p["payload"])
     db.execute("UPDATE proposals SET status=?, payload=?, decided_by=?, decided_at=? WHERE id=?",
                ("approved" if op == "approve" else "rejected", json.dumps(payload), ident.user_id, _now(), proposal_id))
+    # Online eval signal (architecture section 7): did the person approve, and how much did they change the draft?
+    scores = {"approved": 1 if op == "approve" else 0}
+    text_key = next((k for k in ("body", "text", "draft") if isinstance(original.get(k), str)), None)
+    if op == "approve" and text_key:
+        scores["edit_similarity"] = round(difflib.SequenceMatcher(None, original[text_key], payload.get(text_key) or "").ratio(), 3)
+    obs.feedback(p["trace_id"], scores, metadata={"decided_by": ident.user_id, "kind": p["kind"]})
     _audit(ident, "proposal_" + op, {"proposal_id": proposal_id, "case_id": p["object_id"]}, "allow", p["kind"])
     return {"proposal_id": proposal_id, "status": "approved" if op == "approve" else "rejected"}
 
