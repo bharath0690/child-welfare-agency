@@ -9,7 +9,7 @@ from datetime import date, timedelta
 
 SCHEMA = """
 CREATE TABLE meta (k TEXT PRIMARY KEY, v TEXT);
-CREATE TABLE workers (id TEXT PRIMARY KEY, name TEXT, role TEXT, agency TEXT, email TEXT, phone TEXT);
+CREATE TABLE workers (id TEXT PRIMARY KEY, name TEXT, role TEXT, agency TEXT, email TEXT, phone TEXT, supervisor_id TEXT);
 CREATE TABLE children (id TEXT PRIMARY KEY, first TEXT, last TEXT, dob TEXT, gender TEXT, pronouns TEXT,
   race_ethnicity TEXT, language TEXT, icwa TEXT, school TEXT, grade TEXT, medical TEXT, allergies TEXT, avatar TEXT);
 CREATE TABLE cases (id TEXT PRIMARY KEY, case_no TEXT, child_id TEXT REFERENCES children(id), worker_id TEXT REFERENCES workers(id),
@@ -28,11 +28,19 @@ CREATE TABLE plan_goals (id INTEGER PRIMARY KEY, case_id TEXT, goal TEXT, status
 CREATE TABLE forms (id INTEGER PRIMARY KEY, case_id TEXT, visit_id INTEGER, form_type TEXT, fields TEXT, status TEXT);
 CREATE TABLE applicants (id TEXT PRIMARY KEY, name TEXT, household TEXT, language TEXT, worker_id TEXT, stage TEXT,
   application TEXT, checklist TEXT);
-CREATE TABLE kin_users (id TEXT PRIMARY KEY, name TEXT, relationship_id INTEGER, child_id TEXT, language TEXT, phone TEXT);
+CREATE TABLE kin_users (id TEXT PRIMARY KEY, name TEXT, relationship_id INTEGER, child_id TEXT, language TEXT, phone TEXT,
+  placed_on TEXT, approval TEXT, supports TEXT, first_payment_on TEXT);
+CREATE TABLE foster_users (id TEXT PRIMARY KEY, name TEXT, household TEXT, child_id TEXT, phone TEXT, licensed_on TEXT,
+  payments TEXT, supports TEXT, adoption TEXT);
+CREATE TABLE agency_contacts (id INTEGER PRIMARY KEY, role TEXT, name TEXT, phone TEXT, hours TEXT, use_for TEXT, audience TEXT, sort INTEGER);
+CREATE TABLE care_needs (child_id TEXT PRIMARY KEY, routines TEXT, health TEXT, school TEXT, comfort TEXT, avoid TEXT, updated_on TEXT, source TEXT);
+CREATE TABLE worker_messages (id INTEGER PRIMARY KEY, idem_key TEXT UNIQUE, owner_type TEXT, owner_id TEXT, from_name TEXT, worker_id TEXT,
+  text TEXT, sent_at TEXT, answered_at TEXT, answer TEXT, escalated_to TEXT, escalated_at TEXT);
+CREATE TABLE recognitions (id INTEGER PRIMARY KEY, worker_id TEXT, from_name TEXT, case_id TEXT, text TEXT, on_date TEXT);
 CREATE TABLE inquiries (id INTEGER PRIMARY KEY, name TEXT, text TEXT, language TEXT, intent TEXT, urgency TEXT,
   routed_to TEXT, ack TEXT, created_at TEXT);
 CREATE TABLE program_docs (id INTEGER PRIMARY KEY, title TEXT, audience TEXT, jurisdiction TEXT, body TEXT, source TEXT);
-CREATE TABLE disclosure (field TEXT PRIMARY KEY, caseworker INTEGER, kin INTEGER, applicant INTEGER, setting TEXT, note TEXT);
+CREATE TABLE disclosure (field TEXT PRIMARY KEY, caseworker INTEGER, kin INTEGER, applicant INTEGER, foster INTEGER, setting TEXT, note TEXT);
 CREATE TABLE agency_settings (k TEXT PRIMARY KEY, v TEXT);
 CREATE TABLE chat_messages (id INTEGER PRIMARY KEY, object_type TEXT, object_id TEXT, persona TEXT, user_id TEXT,
   role TEXT, content TEXT, meta TEXT, created_at TEXT);
@@ -60,12 +68,13 @@ def dob(age_years: int, extra_days: int = 0) -> str:
     return (date.today() - timedelta(days=int(age_years * 365.25) + 40 + extra_days)).isoformat()
 
 
-WORKERS = [
-    ("cw1", "Maya Alvarez", "caseworker", "maya.alvarez@cedar.example", "555-0101"),
-    ("cw2", "Daniel Okafor", "caseworker", "daniel.okafor@cedar.example", "555-0102"),
-    ("cw3", "Grace Lin", "caseworker", "grace.lin@cedar.example", "555-0103"),
-    ("lw1", "Priya Natarajan", "licensing worker", "priya.natarajan@cedar.example", "555-0110"),
-    ("sv1", "Robert Hale", "supervisor", "robert.hale@cedar.example", "555-0120"),
+WORKERS = [  # id, name, role, email, phone, supervisor
+    ("cw1", "Maya Alvarez", "caseworker", "maya.alvarez@cedar.example", "555-0101", "sv1"),
+    ("cw2", "Daniel Okafor", "caseworker", "daniel.okafor@cedar.example", "555-0102", "sv1"),
+    ("cw3", "Grace Lin", "caseworker", "grace.lin@cedar.example", "555-0103", "sv1"),
+    ("lw1", "Priya Natarajan", "licensing worker", "priya.natarajan@cedar.example", "555-0110", "sv2"),
+    ("sv1", "Robert Hale", "supervisor", "robert.hale@cedar.example", "555-0120", None),
+    ("sv2", "Dana Price", "licensing supervisor", "dana.price@cedar.example", "555-0121", None),
 ]
 
 # --- Visit transcripts (speaker-labelled, consent recorded at the start) -----------------------------
@@ -298,27 +307,28 @@ CHILDREN = [
 ]
 
 DISCLOSURE = [
-    # field, caseworker, kin, applicant, agency setting that can switch kin access, note
-    ("name", 1, 1, 0, None, "Kin caregiver may see the placed child's name."),
-    ("age", 1, 1, 0, None, ""),
-    ("dob", 1, 1, 0, None, "Needed for school and medical appointments."),
-    ("gender", 1, 1, 0, None, ""),
-    ("pronouns", 1, 1, 0, None, ""),
-    ("photo", 1, 1, 0, None, ""),
-    ("language", 1, 1, 0, None, ""),
-    ("school", 1, 1, 0, None, ""),
-    ("medical", 1, 1, 0, "kin_medical", "Shared with kin when the agency setting allows."),
-    ("allergies", 1, 1, 0, None, "Always shared with the person caring for the child."),
-    ("court_dates", 1, 1, 0, None, ""),
-    ("visit_schedule", 1, 1, 0, None, ""),
-    ("worker_contact", 1, 1, 0, None, ""),
-    ("race_ethnicity", 1, 0, 0, None, ""),
-    ("icwa", 1, 0, 0, None, "Tribal status is discussed by the worker."),
-    ("parent_contact", 1, 0, 0, None, "Contact with parents is arranged by the worker."),
-    ("removal_reason", 1, 0, 0, None, "Reason for removal is shared by the worker, not the AI."),
-    ("case_notes", 1, 0, 0, None, ""),
-    ("relationships", 1, 0, 0, None, "Other relatives' details are not shared."),
-    ("reporter_identity", 0, 0, 0, None, "Never available to anyone through the AI."),
+    # field, caseworker, kin, applicant, foster, agency setting that can switch caregiver access, note
+    ("name", 1, 1, 0, 1, None, "Kin caregiver may see the placed child's name."),
+    ("age", 1, 1, 0, 1, None, ""),
+    ("dob", 1, 1, 0, 1, None, "Needed for school and medical appointments."),
+    ("gender", 1, 1, 0, 1, None, ""),
+    ("pronouns", 1, 1, 0, 1, None, ""),
+    ("photo", 1, 1, 0, 1, None, ""),
+    ("language", 1, 1, 0, 1, None, ""),
+    ("school", 1, 1, 0, 1, None, ""),
+    ("medical", 1, 1, 0, 1, "kin_medical", "Shared with kin when the agency setting allows."),
+    ("allergies", 1, 1, 0, 1, None, "Always shared with the person caring for the child."),
+    ("court_dates", 1, 1, 0, 1, None, ""),
+    ("visit_schedule", 1, 1, 0, 1, None, ""),
+    ("worker_contact", 1, 1, 0, 1, None, ""),
+    ("race_ethnicity", 1, 0, 0, 0, None, ""),
+    ("icwa", 1, 0, 0, 0, None, "Tribal status is discussed by the worker."),
+    ("parent_contact", 1, 0, 0, 0, None, "Contact with parents is arranged by the worker."),
+    ("removal_reason", 1, 0, 0, 0, None, "Reason for removal is shared by the worker, not the AI."),
+    ("case_notes", 1, 0, 0, 0, None, ""),
+    ("relationships", 1, 0, 0, 0, None, "Other relatives' details are not shared."),
+    ("care_needs", 1, 1, 0, 1, "care_needs_sharing", "What the caregiver needs to care for the child day to day. On by default in the prototype; counsel must approve before real use."),
+    ("reporter_identity", 0, 0, 0, 0, None, "Never available to anyone through the AI."),
 ]
 
 PROGRAM_DOCS = [
@@ -360,6 +370,28 @@ PROGRAM_DOCS = [
     ("Health care for children in care", "all",
      "Children in foster care are usually covered by public health insurance. The caseworker can share the child's "
      "card and doctor details with the caregiver."),
+    ("Foster care payments and reimbursement", "applicant",
+     "Licensed foster parents get a monthly payment for each child to cover food, clothing, transport and daily costs. The first "
+     "payment usually arrives 30 to 45 days after placement, then monthly. Clothing allowances and some costs, such as mileage to "
+     "visits, are reimbursed when you submit receipts. If a payment is late or wrong, call the caregiver payments unit. "
+     "Rates in this prototype are fictional."),
+    ("Payments and benefits once a child is placed with you", "foster",
+     "You get a monthly payment for each child, plus reimbursements you claim with receipts. The child keeps their own health "
+     "coverage. Respite care gives you planned breaks. If you adopt, an adoption assistance agreement can continue support after "
+     "finalization; it is agreed before the adoption is final. The caregiver payments unit handles late or wrong payments."),
+    ("When a child's behavior is hard to manage", "foster",
+     "Call the behavioral support line any time, day or night, if a child's behavior is hard to manage or you worry the placement "
+     "may not hold. Tell your caseworker the next working day. For anything dangerous, call 911. Asking for help early is part of "
+     "the job, not a sign you are failing."),
+    ("Legal questions as a caregiver", "foster",
+     "You get notice of court hearings and can tell the court how the child is doing. For questions about your rights, court "
+     "notices, guardianship or adoption, call the caregiver legal help line. Binti AI can explain how things usually work, but it "
+     "does not give legal advice."),
+    ("Help you can get before you are licensed", "kin",
+     "You do not have to wait for a license to get some help. Many relatives can apply right away for a child-only cash grant, "
+     "food assistance and help with clothing or a bed. The child keeps health coverage. A monthly foster care payment usually "
+     "starts only after you are approved as a foster home, so start the other applications now. Your caseworker or the kinship "
+     "navigator can help you apply."),
     ("Paths to a permanent home", "kin",
      "If a child cannot return home, the main long-term paths are guardianship and adoption. Each has different "
      "legal steps and supports. A family law advisor or the caseworker can explain which may apply."),
@@ -381,14 +413,105 @@ APPLICATION = {
         "support_network": "",
     },
 }
-CHECKLIST = [
-    {"item": "Orientation", "status": "done"},
-    {"item": "Background checks (both adults)", "status": "done"},
-    {"item": "Fingerprints for Casey", "status": "pending", "note": "Appointment needed"},
-    {"item": "References (1 of 3 received)", "status": "pending"},
-    {"item": "Medical statement", "status": "missing"},
-    {"item": "Pre-service training", "status": "scheduled", "note": "Starts Saturday"},
-    {"item": "Home study", "status": "not booked"},
+CHECKLIST = [  # since: days ago the item reached its current status; typical: usual range in days
+    {"item": "Orientation", "status": "done", "holder": "Done", "since": 40},
+    {"item": "Background checks (both adults)", "status": "done", "holder": "Done", "since": 12},
+    {"item": "Fingerprints for Casey", "status": "pending", "note": "Appointment needed", "holder": "Your family: book an appointment", "since": 18, "typical": [3, 14]},
+    {"item": "References (1 of 3 received)", "status": "pending", "holder": "Two references have not replied", "since": 21, "typical": [7, 21]},
+    {"item": "Medical statement", "status": "missing", "holder": "Your doctor: the agency form needs a signature", "since": 25, "typical": [7, 21]},
+    {"item": "Pre-service training", "status": "scheduled", "note": "Starts Saturday", "holder": "Scheduled", "since": 5},
+    {"item": "Home study", "status": "not booked", "holder": "Priya Natarajan (licensing): books it once checks clear", "since": 30, "typical": [14, 45]},
+]
+
+
+# Kin approval for Lucia (placed day -6). since/typical in days; reused = carried over from family finding.
+KIN_APPROVAL = [
+    {"item": "Household and relationship details", "status": "reused", "holder": "Carried over from family finding", "since": 6},
+    {"item": "Fingerprints (Lucia)", "status": "done", "holder": "Done", "since": 4},
+    {"item": "Home safety walk-through", "status": "scheduled", "holder": "Maya Alvarez (caseworker)", "since": 6, "typical": [1, 7]},
+    {"item": "State background check", "status": "in progress", "holder": "State background check unit", "since": 5, "typical": [10, 30]},
+    {"item": "Relative home study", "status": "ready to start", "holder": "Priya Natarajan (licensing)", "since": 6, "typical": [30, 60],
+     "note": "Can start now, in parallel with the background check."},
+    {"item": "Caregiver training (kin track)", "status": "not started", "holder": "Lucia: evening and online sessions", "since": 6, "typical": [14, 28]},
+]
+KIN_SUPPORTS = [
+    {"name": "Child-only cash grant", "status": "ready to apply", "license": False,
+     "note": "No license needed. Binti AI can start the application from what the agency already knows; you submit it."},
+    {"name": "Health coverage for Sofia", "status": "active", "license": False, "note": "Sofia is covered. Her card is with Maya."},
+    {"name": "Emergency clothing and bed voucher", "status": "available now", "license": False, "note": "Ask Maya. Issued the same week."},
+    {"name": "Food assistance", "status": "check eligibility", "license": False, "note": "Depends on household income."},
+    {"name": "Kinship navigator", "status": "available now", "license": False, "note": "Help applying, and local support groups."},
+    {"name": "Monthly foster care payment", "status": "after approval", "license": True,
+     "note": "Starts only after you are approved as a foster home. The other supports above do not wait."},
+]
+FOSTER_PAYMENTS = {"monthly": "$812 a month for Isabella (fictional prototype rate)", "last_paid": -5, "next_due": 25,
+                   "pending": [{"item": "Mileage to early intervention, October", "submitted": -12, "typical": [20, 30]}]}
+FOSTER_SUPPORTS = [
+    {"name": "Monthly foster care payment", "status": "active", "license": True, "note": "Paid on the 1st."},
+    {"name": "Health coverage for Isabella", "status": "active", "license": False, "note": "Continues after adoption."},
+    {"name": "Early intervention (physical therapy)", "status": "active", "license": False, "note": "Weekly, through Cedar Early Intervention."},
+    {"name": "Respite care", "status": "available", "license": True, "note": "Up to two weekends a month. Book through Grace."},
+    {"name": "Adoption assistance agreement", "status": "not started", "license": True,
+     "note": "Ongoing support after adoption. It must be agreed before the adoption is final."},
+]
+ADOPTION_STEPS = [
+    {"item": "Goal changed to adoption", "status": "done", "holder": "Court", "since": 60},
+    {"item": "Termination of parental rights", "status": "petition filed", "holder": "Agency attorney and court", "since": 45, "typical": [90, 180]},
+    {"item": "Appeal period after the order", "status": "not started", "holder": "Court", "since": 0, "typical": [30, 30],
+     "note": "Length varies by state."},
+    {"item": "Adoption home study update", "status": "in progress", "holder": "Priya Natarajan (licensing)", "since": 30, "typical": [30, 60]},
+    {"item": "Adoption assistance agreement", "status": "not started", "holder": "Adoption assistance unit", "since": 0, "typical": [30, 90]},
+    {"item": "Finalization hearing", "status": "not scheduled", "holder": "Court, once the steps above are done", "since": 0},
+]
+# role, name, phone, hours, use for, audiences
+AGENCY_CONTACTS = [
+    ("Emergency", "911", "911", "Any time", "A child is in immediate danger.", "kin,foster,applicant"),
+    ("After-hours line", "Cedar County after-hours line", "555-0199", "Evenings, weekends and holidays",
+     "Urgent placement problems when your worker's office is closed.", "kin,foster"),
+    ("Behavior support", "Cedar Youth Behavioral Support line", "555-0177", "24 hours",
+     "A child's behavior is hard to manage, or you worry the placement may not hold.", "kin,foster"),
+    ("Legal questions", "Caregiver Legal Help Line (Cedar Legal Aid)", "555-0166", "Weekdays 9 to 5",
+     "Your rights, court notices, guardianship and adoption questions.", "kin,foster,applicant"),
+    ("Payments", "Caregiver payments unit", "555-0140", "Weekdays 8 to 5",
+     "A payment is late or wrong, or a reimbursement is stuck.", "kin,foster,applicant"),
+    ("Kinship navigator", "Cedar Kinship Navigator", "555-0155", "Weekdays 9 to 6",
+     "Help applying for supports, and local support groups.", "kin"),
+    ("Peer mentor", "Cedar Foster Families Association mentor", "555-0188", "Evenings",
+     "Talk to someone who has fostered before.", "foster,applicant"),
+]
+# child: routines, health, school, comfort, avoid, updated (days), source
+CARE_NEEDS = {
+    "ch02": ("Bed by 8. Likes a night light and her stuffed rabbit, Coco. Eats breakfast before school.",
+             "Peanut allergy: epinephrine auto-injector must go to school with her. No regular medicines.",
+             "Riverside Elementary, grade 1. Teacher: Ms. Alvarado. The school can keep her placement if she stays in the area.",
+             "Speaks Spanish at home. Calms down with drawing and with Tía Lucia's dog.",
+             "Loud arguments upset her. Talk calmly about her mom's hospital stay; Maya will explain what to say.",
+             -2, "Caseworker notes and initial visit"),
+    "ch11": ("Two naps a day (about 9:30 and 1:30). Bottle before bed. Early riser.",
+             "Born early. Weekly physical therapy through early intervention. Next pediatric check in three weeks.",
+             "Not in school. Early intervention visits on Tuesdays.",
+             "Settles with rocking and white noise.",
+             "Bright, busy rooms overstimulate her near nap time.",
+             -10, "Caseworker notes and early intervention plan"),
+    "ch01": ("Soccer on Saturdays. Homework after dinner works best.",
+             "Asthma: inhaler as needed, especially after exercise. Check-up booked on the 28th.",
+             "Cedar Elementary, grade 4. Likes his teacher, Mr. Ortiz.",
+             "Pancakes on Saturdays. Talking about his grandma, Denise.",
+             "Missed visits with his mom are hard; tell him early if a visit changes.",
+             -12, "Visit transcript, Oct 24"),
+}
+# owner type, owner id, from, worker, text, sent (days), answered (days or None), answer
+MESSAGES = [
+    ("applicant", "ap1", "Jordan Bennett", "lw1", "How do I book Casey's fingerprint appointment? The link in the email doesn't work.", -6, None, None),
+    ("kin", "kin1", "Lucia Ramirez", "cw1", "Does Sofia need a doctor's note for her peanut allergy at school?", -2, -1,
+     "Yes. I'll bring the school form on Thursday and help you fill it in. – Maya"),
+    ("foster", "fp1", "Megan Hughes", "cw3", "When will we hear about the adoption assistance agreement?", 0, None, None),
+]
+# worker, from, case, text, days ago
+RECOGNITIONS = [
+    ("cw1", "Robert Hale (supervisor)", "case-02", "Thorough kin search on Sofia's case: her aunt reached and caring for her within a day.", -1),
+    ("cw2", "Robert Hale (supervisor)", "case-05", "Mateo's visit write-up was clear and on time.", -3),
+    ("cw3", "Robert Hale (supervisor)", "case-11", "Isabella's adoption steps are moving on schedule. Thank you.", -2),
 ]
 
 
@@ -396,7 +519,7 @@ def seed(conn):
     conn.executescript(SCHEMA)
     ins = conn.execute
     for w in WORKERS:
-        ins("INSERT INTO workers VALUES (?,?,?,?,?,?)", (w[0], w[1], w[2], AGENCY, w[3], w[4]))
+        ins("INSERT INTO workers VALUES (?,?,?,?,?,?,?)", (w[0], w[1], w[2], AGENCY, w[3], w[4], w[5]))
 
     for c in CHILDREN:
         av = c["avatar"]
@@ -455,17 +578,35 @@ def seed(conn):
             ins("INSERT INTO history (case_id, on_date, kind, text) VALUES (?,?,?,?)",
                 (case_id, d(k["opened"] + 60), "court", "Disposition hearing held. Case plan ordered."))
 
-    # Kin caregiver persona: Lucia Ramirez, caring for Sofia.
+    # Kin caregiver persona: Lucia Ramirez, caring for Sofia since day -6.
     lucia = conn.execute("SELECT id FROM relationships WHERE name='Lucia Ramirez'").fetchone()[0]
-    ins("INSERT INTO kin_users VALUES (?,?,?,?,?,?)", ("kin1", "Lucia Ramirez", lucia, "ch02", "Spanish, English", "555-0230"))
+    ins("INSERT INTO kin_users VALUES (?,?,?,?,?,?,?,?,?,?)",
+        ("kin1", "Lucia Ramirez", lucia, "ch02", "Spanish, English", "555-0230", d(-6), json.dumps(KIN_APPROVAL), json.dumps(KIN_SUPPORTS), None))
+    # Licensed foster parent persona: the Hughes family, adopting Isabella.
+    ins("INSERT INTO foster_users VALUES (?,?,?,?,?,?,?,?,?)",
+        ("fp1", "Megan Hughes", "Megan and Chris Hughes", "ch11", "555-0260", d(-800),
+         json.dumps(FOSTER_PAYMENTS), json.dumps(FOSTER_SUPPORTS), json.dumps(ADOPTION_STEPS)))
+    for i, c in enumerate(AGENCY_CONTACTS):
+        ins("INSERT INTO agency_contacts (role, name, phone, hours, use_for, audience, sort) VALUES (?,?,?,?,?,?,?)", c + (i,))
+    for cid, n in CARE_NEEDS.items():
+        ins("INSERT INTO care_needs VALUES (?,?,?,?,?,?,?,?)", (cid, n[0], n[1], n[2], n[3], n[4], d(n[5]), n[6]))
+    for m in MESSAGES:
+        ins("INSERT INTO worker_messages (idem_key, owner_type, owner_id, from_name, worker_id, text, sent_at, answered_at, answer) "
+            "VALUES (?,?,?,?,?,?,?,?,?)", (f"seed-{m[0]}-{m[5]}", m[0], m[1], m[2], m[3], m[4],
+                                          d(m[5]) + "T10:00:00", (d(m[6]) + "T15:00:00") if m[6] is not None else None, m[7]))
+    for r in RECOGNITIONS:
+        ins("INSERT INTO recognitions (worker_id, from_name, case_id, text, on_date) VALUES (?,?,?,?,?)", r[:4] + (d(r[4]),))
     # Applicant persona: the Bennetts.
     ins("INSERT INTO applicants VALUES (?,?,?,?,?,?,?,?)",
         ("ap1", "Jordan Bennett", "Jordan and Casey Bennett", "English", "lw1", "Complete requirements",
          json.dumps(APPLICATION), json.dumps(CHECKLIST)))
 
     for row in DISCLOSURE:
-        ins("INSERT INTO disclosure VALUES (?,?,?,?,?,?)", row)
+        ins("INSERT INTO disclosure VALUES (?,?,?,?,?,?,?)", row)
     ins("INSERT INTO agency_settings VALUES ('kin_medical', 'true')")
+    ins("INSERT INTO agency_settings VALUES ('care_needs_sharing', 'true')")
+    ins("INSERT INTO agency_settings VALUES ('kin_license_target_days', '90')")
+    ins("INSERT INTO agency_settings VALUES ('message_response_business_days', '2')")
     for t, aud, body in PROGRAM_DOCS:
         ins("INSERT INTO program_docs (title, audience, jurisdiction, body, source) VALUES (?,?,?,?,?)",
             (t, aud, JURIS, body, f"Cedar County caregiver guide (fictional): {t}"))

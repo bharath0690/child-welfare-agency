@@ -79,9 +79,22 @@ def check_input(text, persona):
             "spanish": bool(re.search(r"[¿¡ñáéíóú]|\b(hola|gracias|ayuda|necesito|puedo|niñ[oa]s?)\b", t, re.I))}
 
 
+
+
+def _decides(text):
+    """True when the text states a decision. Conditional mentions ("after you are approved") are explanations, not verdicts."""
+    for pat in DECISION_PATTERNS:
+        for m in re.finditer(pat, text, re.I):
+            before = text[max(0, m.start() - 24):m.start()]
+            if re.search(r"\b(before|after|until|once|when|if|unless|whether)\s*$", before, re.I):
+                continue
+            return True
+    return False
+
+
 def check_output(text, persona):
     flags = []
-    if _any(DECISION_PATTERNS, text):
+    if _decides(text):
         flags.append("decision_blocked")
         text = ("I can't make or recommend placement, custody, eligibility, approval or risk decisions. "
                 + ("Those decisions belong to you, your supervisor and the court. I can gather the facts and sources for you."

@@ -83,6 +83,9 @@ def run_case(c):
             q = "SELECT id FROM visits WHERE case_id=? " + ("AND transcript IS NOT NULL " if a["visit"] == "recorded" else "") + "ORDER BY on_date DESC"
             a["visit_id"] = db.row(q, (a["case_id"],))["id"]
             del a["visit"]
+        if a.get("hearing") == "next":
+            a["hearing_date"] = db.row("SELECT on_date FROM court_dates WHERE case_id=? AND on_date>=date('now') ORDER BY on_date", (a["case_id"],))["on_date"]
+            del a["hearing"]
         if "relative" in a:
             a["relationship_id"] = db.row("SELECT id FROM relationships WHERE name=?", (a.pop("relative"),))["id"]
         if w == "language_check":
@@ -95,7 +98,7 @@ def run_case(c):
             got = out["acknowledgement"]
         else:
             fn = {"visit_note": workflows.visit_note, "prefill": workflows.prefill, "first_contact": workflows.first_contact,
-                  "application_help": workflows.application_help}[w]
+                  "application_help": workflows.application_help, "court_report": workflows.court_report}[w]
             out = fn(ident(c), **a)
             got = out.get("body") or out.get("draft") or out.get("error") or ""
         if isinstance(out, dict):

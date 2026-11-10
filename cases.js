@@ -141,6 +141,7 @@
       opts += "<optgroup label='Caseworker'>" + B.people.caseworker.map(function (p) { return opt("caseworker", p.id, p.name + " · " + p.cases + " cases"); }).join("") + "</optgroup>";
       opts += "<optgroup label='Kin caregiver'>" + B.people.kin.map(function (p) { return opt("kin", p.id, p.name + " · caring for " + p.caring_for); }).join("") + "</optgroup>";
       opts += "<optgroup label='Prospective parent'>" + B.people.applicant.map(function (p) { return opt("applicant", p.id, p.name); }).join("") + "</optgroup>";
+      if (B.people.foster) opts += "<optgroup label='Licensed foster parent'>" + B.people.foster.map(function (p) { return opt("foster", p.id, p.name + " · caring for " + p.caring_for); }).join("") + "</optgroup>";
     }
     function opt(per, id, label) { var v = per + ":" + id; return "<option value='" + v + "'" + (B.as.persona === per && B.as.user === id ? " selected" : "") + ">" + esc(label) + "</option>"; }
     var tour = load("bw.tour") ? "" : "<div class='bw-tour' role='dialog' aria-label='Tip'><b>Switch personas here</b>" +
@@ -162,7 +163,7 @@
   /* ---------- case list ---------- */
   function viewList() {
     if (B.as.persona === "applicant") return "<div class='bw-card'><div class='bd'>Your application lives on <a class='bw-link' href='#/application'>My application</a>.</div></div>";
-    if (B.as.persona === "kin") {
+    if (B.as.persona === "kin" || B.as.persona === "foster") {
       if (!B.cases) return loading();
       var c = B.cases[0];
       return "<div class='bw-card'><div class='hd'><h2>The child in your care</h2></div><div class='bd'><a class='bw-link' href='#/case/" + esc(c.case_id) + "' style='display:flex;gap:12px;align-items:center'>" +
@@ -211,7 +212,7 @@
   function viewCase() {
     var x = B.detail;
     if (!x) return loading();
-    if (x.view === "kin") return viewKinCase(x);
+    if (x.view === "kin" || x.view === "foster") return viewKinCase(x);
     var c = x.case, ch = c.child, p = c.placement || {};
     var tabs = [["relationships", "Relationships"], ["placements", "Placements"], ["history", "History"], ["visits", "Visits and notes"], ["tasks", "Tasks and court"], ["audit", "Audit log"]];
     var head = "<div class='bw-card'><div class='bd bw-prof'><span class='bw-av lg'>" + ch.avatar_svg + "</span><div class='grow'><h1>" + esc(ch.name) + "<span>, age " + ch.age + "</span></h1>" +
@@ -227,7 +228,10 @@
       dl("Placement", esc(p.caregiver || "—") + " <span class='muted'>(" + esc(p.kind || "") + ", since " + d(p.start_on) + ")</span>") + dl("Goal", esc(c.permanency_goal)) +
       dl("Opened", d(c.opened_on)) + dl("Reason", esc(c.removal_reason || "—")) + dl("School", esc(ch.school) + ", grade " + esc(ch.grade)) +
       dl("Health", esc(ch.medical)) + dl("Allergies", esc(ch.allergies)) + dl("ICWA", esc(ch.icwa)) + dl("Race/ethnicity", esc(ch.race_ethnicity)) +
-      dl("Parent contact", esc(ch.parent_contact || "—")) + dl("Worker", esc(c.worker)) + "</dl></div></div>";
+      dl("Parent contact", esc(ch.parent_contact || "—")) + dl("Worker", esc(c.worker)) + "</dl></div></div>" +
+      (x.care_needs ? "<div class='bw-card'><div class='hd'><h3>Care needs shared with the caregiver</h3></div><div class='bd'><dl class='bw-dl'>" + dl("Routines", esc(x.care_needs.routines)) +
+        dl("Health", esc(x.care_needs.health)) + dl("What helps", esc(x.care_needs.comfort)) + "</dl><p class='small muted'>Caregivers see this. They do not see the reason for removal.</p></div></div>" :
+        "<div class='bw-card'><div class='bd small muted'>No care needs written for the caregiver yet.</div></div>");
     return "<div><button class='bw-link' data-bw='go' data-arg='#/cases'>← My cases</button></div>" + "<div class='bw-grid'><div style='display:flex;flex-direction:column;gap:16px;min-width:0'>" + head + drafts + "</div>" + side + "</div>";
   }
   function stageName(i) { return ["", "Accept a new case", "Build the plan with the family", "Visit and capture", "Find and engage kin", "Prepare for court", "Reach permanency and close"][i]; }
@@ -260,7 +264,10 @@
     }
     if (B.tab === "tasks") {
       var t = x.tasks.map(function (t) { var od = days(t.due_on) < 0; return "<li><span>" + esc(t.title) + "</span><span class='" + (od ? "bw-od" : "") + "'>" + d(t.due_on) + " · " + rel(t.due_on) + "</span></li>"; }).join("");
-      var c = x.court.map(function (h) { return "<li><span><b>" + esc(h.hearing) + "</b> <span class='muted'>· report " + esc(h.report_status) + "</span></span><span>" + d(h.on_date) + " · " + rel(h.on_date) + "</span></li>"; }).join("");
+      var c = x.court.map(function (h) {
+        var can = days(h.on_date) >= 0 && h.report_status !== "ready to file";
+        return "<li><span><b>" + esc(h.hearing) + "</b> <span class='muted'>· report " + esc(h.report_status) + "</span></span><span style='display:flex;gap:8px;align-items:center;flex-wrap:wrap'>" + d(h.on_date) + " · " + rel(h.on_date) +
+          (can ? btn(SPARK + " Draft court report", "court-report", h.on_date, "sm") : "") + "</span></li>"; }).join("");
       var r = x.referrals.map(function (f) { return "<li><span>" + esc(f.provider) + " <span class='muted'>· " + esc(f.service) + "</span></span><span class='bw-pill " + (f.status === "active" ? "ok" : f.status === "awaiting reply" ? "warn" : "none") + "'>" + esc(f.status) + "</span></li>"; }).join("");
       var g = x.plan.map(function (p) { return "<li><span>" + esc(p.goal) + "</span><span class='bw-pill " + (p.status === "done" ? "ok" : p.status === "draft" ? "none" : "blue") + "'>" + esc(p.status) + "</span></li>"; }).join("");
       return "<h4>Tasks</h4><ul class='bw-list'>" + (t || "<li class='muted'>None</li>") + "</ul><h4 style='margin-top:14px'>Court</h4><ul class='bw-list'>" + (c || "<li class='muted'>No hearings scheduled</li>") +
@@ -294,6 +301,11 @@
       return "<div class='bw-ai' id='" + id + "'>" + head + "<div style='overflow-x:auto'><table class='bw-form-t'>" + rows + "</table></div><div style='display:flex;gap:8px;flex-wrap:wrap'>" +
         btn("Approve form", "approve", p.id, "pri") + btn("Discard", "reject", p.id) + "</div>" + rate(id, pl.form_type) + "</div>";
     }
+    if (k === "court_report") {
+      return "<div class='bw-ai' id='" + id + "'>" + head + "<div class='small'>Facts only, each with its source. Write the recommendation in section 7, then sign.</div>" +
+        "<textarea data-bw-input='edit-" + p.id + "' aria-label='Court report draft' style='min-height:320px'>" + esc(pl.body) + "</textarea><div style='display:flex;gap:8px;flex-wrap:wrap'>" +
+        btn("Approve and sign", "approve", p.id, "pri") + btn("Discard", "reject", p.id) + "</div>" + rate(id, "Court report " + pl.hearing_date) + "</div>";
+    }
     if (k === "outreach") {
       return "<div class='bw-ai' id='" + id + "'>" + head + "<div class='small'>To <b>" + esc(pl.to) + "</b> · " + esc(pl.language) + (pl.language !== "English" ? " · <span class='bw-chip warn'>bilingual check needed</span>" : "") + "</div>" +
         "<textarea data-bw-input='edit-" + p.id + "' aria-label='Message'>" + esc(pl.body) + "</textarea><div style='display:flex;gap:8px;flex-wrap:wrap'>" +
@@ -303,16 +315,67 @@
       btn("Approve", "approve", p.id, "pri") + btn("Discard", "reject", p.id) + "</div></div>";
   }
 
+  function pillFor(st) {
+    var ok = /done|active|answered|reused|ready to file/.test(st), bad = /missing|escalated|after approval|not started|not scheduled|not booked/.test(st);
+    return "<span class='bw-pill " + (ok ? "ok" : bad ? (st === "escalated" ? "bad" : "none") : "warn") + "'>" + esc(st) + "</span>";
+  }
+  function stepRows(items) {
+    return "<ul class='bw-list bw-steplist'>" + items.map(function (x) {
+      var t = x.typical, rng = t ? (t[0] === t[1] ? "usually about " + t[0] + " days" : "usually " + t[0] + " to " + t[1] + " days") : "";
+      var age = x.status !== "done" && x.status !== "reused" && x.days ? "for " + x.days + " day" + (x.days === 1 ? "" : "s") : "";
+      return "<li><div><b>" + esc(x.item) + "</b><div class='small muted'>Who has it: " + esc(x.holder) + (age ? " · " + age : "") + (rng ? " · " + rng : "") + "</div>" +
+        (x.note ? "<div class='small'>" + esc(x.note) + "</div>" : "") + (x.stalled ? "<div class='bw-find small'>Past its usual time. Flagged to the supervisor.</div>" : "") + "</div>" + pillFor(x.status) + "</li>";
+    }).join("") + "</ul>";
+  }
+  function contactsCard(list, title) {
+    return "<div class='bw-card'><div class='hd'><h3>" + (title || "Who to call for what") + "</h3></div><div class='bd'><ul class='bw-list bw-who'>" + list.map(function (c) {
+      return "<li><div><b>" + esc(c.role) + "</b><div class='small'>" + (c.name !== c.phone ? esc(c.name) + " · " : "") + "<span class='bw-phone'>" + esc(c.phone) + "</span> · <span class='muted'>" + esc(c.hours) + "</span></div>" +
+        "<div class='small muted'>" + esc(c.use_for) + "</div></div></li>";
+    }).join("") + "</ul></div></div>";
+  }
+  function messagesCard(ms) {
+    var rows = ms.map(function (m) {
+      var st = m.state === "answered" ? "answered" : m.state === "escalated" ? "escalated" : "reply due " + d(m.respond_by);
+      return "<li><div><div>" + esc(m.text) + "</div><div class='small muted'>Sent " + d(m.sent_on) + " to " + esc(m.worker || "your worker") + "</div>" +
+        (m.answer ? "<div class='small bw-answer'>" + esc(m.answer) + "</div>" : "") +
+        (m.state === "escalated" ? "<div class='small bw-find'>No reply by " + d(m.respond_by) + ", so it went to " + esc(m.escalated_to) + (m.supervisor ? " (" + esc(m.supervisor.phone) + ")" : "") + ".</div>" : "") + "</div>" + pillFor(st) + "</li>";
+    }).join("");
+    return "<div class='bw-card'><div class='hd'><h3>Messages to your worker</h3></div><div class='bd'>" + (rows ? "<ul class='bw-list'>" + rows + "</ul>" : "<p class='muted small'>No messages yet.</p>") +
+      "<form data-bw-form='msg' class='bw-msgform'><textarea name='q' rows='2' data-bw-input='msg-draft' aria-label='Message your worker' placeholder='Write to your worker'>" + esc(B.msgDraft || "") + "</textarea>" +
+      "<button class='bw-btn pri' type='submit'>Send</button><span class='hint small muted'>A reply is due within 2 business days. If none comes, the message goes to their supervisor automatically.</span></form></div></div>";
+  }
+  function careNeedsCard(n, first) {
+    if (!n || n.available === false) return "<div class='bw-card'><div class='hd'><h3>What " + esc(first) + " needs day to day</h3></div><div class='bd'><p class='muted small'>" + esc((n && n.note) || "Not written yet. Ask your caseworker.") + "</p></div></div>";
+    return "<div class='bw-card'><div class='hd'><h3>What " + esc(first) + " needs day to day</h3><span class='small muted'>From " + esc(n.source) + ", " + d(n.updated_on) + "</span></div><div class='bd'><dl class='bw-dl'>" +
+      dl("Routines", esc(n.routines)) + dl("Health", esc(n.health)) + dl("School", esc(n.school)) + dl("What helps", esc(n.comfort)) + dl("Go gently with", esc(n.avoid)) + "</dl></div></div>";
+  }
+  function supportsCard(sp, persona) {
+    var head = persona === "kin" ? "<div class='bw-tile'><b>" + esc(sp.time_to_first_payment) + "</b>The monthly payment waits for approval. These don't:</div>" :
+      "<div class='bw-tile'><b>Next payment " + d(sp.next_payment_on) + "</b>" + esc(sp.monthly) + " · last paid " + d(sp.last_paid_on) + "</div>" +
+      sp.pending_reimbursements.map(function (r) { return "<p class='small'>Reimbursement pending: " + esc(r.item) + ", submitted " + d(r.submitted_on) + " (" + r.days + " days ago, usually " + r.typical[0] + " to " + r.typical[1] + ")</p>"; }).join("");
+    var rows = sp.supports.map(function (x) {
+      return "<li><div><b>" + esc(x.name) + "</b>" + (persona === "kin" && !x.license ? " <span class='bw-chip blue'>no license needed</span>" : "") + "<div class='small muted'>" + esc(x.note) + "</div></div>" + pillFor(x.status) + "</li>";
+    }).join("");
+    return "<div class='bw-card'><div class='hd'><h3>" + (persona === "kin" ? "Money and help you can get now" : "Payments and support") + "</h3></div><div class='bd'>" + head + "<ul class='bw-list'>" + rows + "</ul>" +
+      "<p class='small muted'>The eligibility team decides what you qualify for. Late or wrong payment: caregiver payments unit, 555-0140.</p></div></div>";
+  }
+
   function viewKinCase(x) {
-    var c = x.child;
-    var rows = [["School", c.school ? esc(c.school) + ", grade " + esc(c.grade) : null], ["Allergies", c.allergies && esc(c.allergies)], ["Health", c.medical && esc(c.medical)],
+    var c = x.child, first = c.first || c.name.split(" ")[0];
+    var rows = [["School", c.school ? esc(c.school) + (c.grade && c.grade !== "-" ? ", grade " + esc(c.grade) : "") : null], ["Allergies", c.allergies && esc(c.allergies)], ["Health", c.medical && esc(c.medical)],
       ["Birthday", c.dob && d(c.dob)], ["Language", c.language && esc(c.language)]].filter(function (r) { return r[1]; }).map(function (r) { return dl(r[0], r[1]); }).join("");
-    return "<div class='bw-grid'><div style='display:flex;flex-direction:column;gap:16px'><div class='bw-card'><div class='bd bw-prof'><span class='bw-av lg'>" + c.avatar_svg + "</span><div class='grow'><h1>" + esc(c.name) + "<span>, age " + c.age + "</span></h1>" +
+    var progress = x.view === "kin" ?
+      "<div class='bw-card'><div class='hd'><h3>Your approval</h3><span class='small muted'>Day " + x.approval.day + " · agency target " + x.approval.agency_target_days + " days · national average about " + x.approval.national_average_days + "</span></div><div class='bd'>" +
+        stepRows(x.approval.items) + "<p class='small muted'>" + esc(x.approval.note) + "</p></div></div>" :
+      "<div class='bw-card'><div class='hd'><h3>Adoption steps</h3></div><div class='bd'>" + stepRows(x.adoption.steps) + "<p class='small muted'>" + esc(x.adoption.context) + " " + esc(x.adoption.note) + "</p></div></div>";
+    return "<div class='bw-grid'><div style='display:flex;flex-direction:column;gap:16px;min-width:0'><div class='bw-card'><div class='bd bw-prof'><span class='bw-av lg'>" + c.avatar_svg + "</span><div class='grow'><h1>" + esc(c.name) + "<span>, age " + c.age + "</span></h1>" +
       "<div class='meta'>" + esc(c.gender) + " · " + esc(c.pronouns) + "</div></div>" + btn("✦ Ask Binti AI", "panel-open", null, "ai") + "</div>" +
       "<div class='bd' style='border-top:1px solid var(--bw-line)'><dl class='bw-dl'>" + rows + "</dl><p class='small muted' style='margin-top:10px'>" + esc(x.hidden_note) + "</p></div></div>" +
+      careNeedsCard(x.care_needs, first) + (x.view === "kin" ? supportsCard(x.supports, "kin") + progress : progress + supportsCard(x.supports, "foster")) +
       "<div class='bw-card'><div class='hd'><h3>Coming up</h3></div><div class='bd'><ul class='bw-list bw-tl'>" + x.schedule.map(function (s) { return "<li><time>" + d(s.date) + "</time><span>" + esc(s.what) + "</span></li>"; }).join("") + "</ul></div></div></div>" +
-      "<div class='bw-card'><div class='hd'><h3>Your caseworker</h3></div><div class='bd'><div style='display:flex;gap:10px;align-items:center'><span class='bw-ini'>" + initials(x.worker.name) + "</span><div><b>" + esc(x.worker.name) + "</b><br><span class='muted small'>" + esc(x.worker.phone) + " · " + esc(x.worker.email) + "</span></div></div></div></div></div>";
+      "<div style='display:flex;flex-direction:column;gap:16px;min-width:0'>" + contactsCard(x.contacts) + messagesCard(x.messages) + "</div></div>";
   }
+
 
   /* ---------- application (prospective parent) ---------- */
   function viewApp() {
@@ -328,7 +391,7 @@
       "<textarea data-bw-input='appdraft' aria-label='Draft answer'>" + esc(B.appDraft.draft) + "</textarea><div style='display:flex;gap:8px;flex-wrap:wrap'>" +
       btn("Use this answer", "app-accept", B.appDraft.proposal.proposal_id, "pri") + btn("Discard", "app-reject", B.appDraft.proposal.proposal_id) + "</div>" + rate("app-" + B.appDraft.proposal.proposal_id, "Application answer") + "</div>" : "";
     var tri = B.triage ? "<div class='bw-ai'><div class='t'>" + SPARK + " Triage result</div><dl class='bw-dl'>" + dl("Intent", esc(B.triage.intent)) + dl("Urgency", esc(B.triage.urgency)) + dl("Language", esc(B.triage.language)) + dl("Routed to", esc(B.triage.routed_to)) + "</dl><div class='small'><b>Acknowledgement sent:</b> " + esc(B.triage.acknowledgement) + "</div></div>" : "";
-    var check = a.checklist.map(function (i) { return "<li><span>" + esc(i.item) + (i.note ? " <span class='muted small'>· " + esc(i.note) + "</span>" : "") + "</span><span class='bw-pill " + (i.status === "done" ? "ok" : i.status === "missing" ? "bad" : i.status === "not booked" ? "none" : "warn") + "'>" + esc(i.status) + "</span></li>"; }).join("");
+    var check = stepRows(a.checklist.map(function (i) { return { item: i.item + (i.note ? " · " + i.note : ""), status: i.status, holder: i.holder || "Agency", days: i.since, typical: i.typical, stalled: !!(i.typical && i.status !== "done" && i.since > i.typical[1]) }; }));
     return "<div class='row between' style='display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px'><div><h1 style='font-size:24px;margin:0'>Initial application form</h1><p class='muted'>" + esc(a.application.household) + " · Licensing worker: " + esc(a.application.licensing_worker.name) + "</p></div>" + btn("✦ Ask Binti AI", "panel-open", null, "ai") + "</div>" +
       "<div class='bw-app'><div class='bw-card'><div class='bd'>" + steps + "</div></div><div style='display:flex;flex-direction:column;gap:16px;min-width:0'>" +
       "<div class='bw-card'><div class='hd'><h3>Home information</h3></div><div class='bd'>" +
@@ -339,7 +402,9 @@
       (f.why_foster ? "<div class='bw-field'><label>Your submitted answer</label><textarea readonly>" + esc(f.why_foster) + "</textarea></div>" : "") +
       "<div class='bw-field'><label for='bw-notes'>Write a few notes in your own words. Binti AI turns them into a draft you can edit.</label><textarea id='bw-notes' data-bw-input='notes' placeholder='e.g. we have a spare room, my sister fostered, we love kids, flexible work'>" + esc(B.notes || "") + "</textarea></div>" +
       btn("✦ Help me write this", "app-help", "why_foster", "pri") + "<div style='margin-top:12px'>" + draft + "</div></div></div>" +
-      "<div class='bw-grid' style='grid-template-columns:minmax(0,1fr) minmax(0,1fr)'><div class='bw-card'><div class='hd'><h3>Your checklist</h3></div><div class='bd'><ul class='bw-list'>" + check + "</ul></div></div>" +
+      "<div class='bw-grid' style='grid-template-columns:minmax(0,1fr) minmax(0,1fr)'><div class='bw-card'><div class='hd'><h3>Your checklist</h3><span class='small muted'>Who has each item, and for how long</span></div><div class='bd'>" + check + "</div></div>" +
+      "<div style='display:flex;flex-direction:column;gap:16px;min-width:0'>" + contactsCard(a.contacts) + messagesCard(a.messages) + "</div></div>" +
+      "<div class='bw-grid' style='grid-template-columns:minmax(0,1fr)'>" +
       "<div class='bw-card'><div class='hd'><h3>Inquiry triage (demo)</h3></div><div class='bd'><p class='small muted'>What a new family's inquiry looks like when it arrives. Binti AI detects language, intent and urgency, routes it to a named worker and sends an acknowledgement.</p>" +
       "<div class='bw-field'><label>Name</label><input data-bw-input='tri-name' value='" + esc(B.triName || "Alex Rivera") + "'></div><div class='bw-field'><label>Message</label><textarea data-bw-input='tri-text'>" + esc(B.triText || "Hi, my partner and I are thinking about fostering teens. How do we start?") + "</textarea></div>" +
       btn("Submit inquiry", "triage") + "<div style='margin-top:12px'>" + tri + "</div></div></div></div></div></div>";
@@ -361,9 +426,16 @@
           "<span class='tt'>" + esc(c.title) + "</span><span class='why'>" + esc(c.why) + "</span></button>" +
           "<a class='open' href='#/case/" + esc(c.case_id) + "'>Open case ↗</a></div>";
       }).join("");
-      body = "<div class='bw-home-intro'><div class='bw-msg assistant md'>" + md(x.greeting) + "</div></div>" +
+      var wl = B.workload, strip = "";
+      if (wl) {
+        strip = "<div class='bw-wl'>" + [[wl.cases, "cases", "Recommended about " + wl.recommended], [wl.due_this_week, "due this week", "Tasks and hearings"], [wl.overdue, "with overdue items", "Visits or tasks"],
+          [wl.drafts_to_sign, "AI drafts to sign", "Review, then sign"], [wl.court_within_14, "court within 14 days", "Reports Binti AI can assemble"], [x.time_back.minutes + " min", "back from AI drafts", "From signed drafts, not a model"]].map(function (t) {
+          return "<div class='t'><b>" + t[0] + "</b><span>" + t[1] + "</span><small>" + t[2] + "</small></div>"; }).join("") + "</div>" +
+          (wl.recognition.length ? "<div class='bw-recog'>" + wl.recognition.map(function (r) { return "<div><b>" + esc(r.from_name) + "</b> · " + d(r.on_date) + "<br>" + esc(r.text) + "</div>"; }).join("") + "</div>" : "");
+      }
+      body = strip + "<div class='bw-home-intro'><div class='bw-msg assistant md'>" + md(x.greeting) + "</div></div>" +
         "<div class='bw-home-cards'><div class='hd'><h2>Your day</h2><span class='legend'><i class='urgent'></i>Urgent <i class='soon'></i>Soon <i class='routine'></i>Routine</span>" +
-        "<span class='muted small'>" + x.time_back.minutes + " min returned by signed AI drafts</span></div><div class='grid'>" + cards + "</div></div>" +
+        "</div><div class='grid'>" + cards + "</div></div>" +
         "<div class='bw-msgs'>" + H2.msgs.map(msg).join("") + (H2.busy ? "<div class='bw-msg assistant muted'>Thinking…</div>" : "") + "</div>" +
         "<div class='bw-sugg'>" + x.suggestions.map(function (q) { return "<button type='button' data-bw='home-ask' data-arg='" + esc(q) + "'>" + esc(q) + "</button>"; }).join("") + "</div>";
     }
@@ -385,6 +457,7 @@
   function scrollHome() { var el = document.getElementById("bw-home-scroll"); if (el) el.scrollTop = el.scrollHeight; }
   function loadHome() {
     B.home.data = null; B.home.err = null; render();
+    api("/workload").then(function (w) { B.workload = w; render(); }).catch(function () { /* optional strip */ });
     api("/ai/open", { object_type: "caseload", workspace: wsPayload("caseload", B.as.user) }).then(function (x) {
       B.home.data = x; B.home.msgs = wsMsgs("caseload", B.as.user); render(); if (B.home.msgs.length) scrollHome();
     })
@@ -397,12 +470,13 @@
       var n = B.people ? ((B.people.caseworker.filter(function (p) { return p.id === B.as.user; })[0] || {}).cases || "") : "";
       items = it("#/home", SPARK + " Binti AI", v === "home") + it("#/cases", "My cases", v === "list" || v === "case", n ? "<span class='n'>" + n + "</span>" : "");
     } else if (per === "kin") items = it("#/cases", "My family", v === "list" || v === "case");
+    else if (per === "foster") items = it("#/cases", "My child", v === "list" || v === "case");
     else items = it("#/application", "My application", v === "app");
     return "<nav class='bw-sidenav' aria-label='Main'>" + items + "</nav>";
   }
 
   /* ---------- workspace screen: every saved chat in this browser, across personas ---------- */
-  var PERSONA_LABEL = { caseworker: "Caseworker", kin: "Kin caregiver", applicant: "Prospective parent" };
+  var PERSONA_LABEL = { caseworker: "Caseworker", kin: "Kin caregiver", applicant: "Prospective parent", foster: "Licensed foster parent" };
   function viewWorkspace() {
     var keys = Object.keys(WS.threads).filter(function (k) { return WS.threads[k].msgs.length; })
       .sort(function (a, b) { return (WS.threads[a].updated || "") < (WS.threads[b].updated || "") ? 1 : -1; });
@@ -429,20 +503,20 @@
     else if (!x) body = loading();
     else {
       var ctx = B.as.persona === "caseworker" && B.detail && B.detail.case ? "Context: " + esc(B.detail.case.child.name) + " · " + esc(B.detail.case.case_no) :
-        B.as.persona === "kin" ? "Context: the child in your care" : "Context: your application";
+        B.as.persona !== "applicant" ? "Context: the child in your care" : "Context: your application";
       var side = "<div class='bw-ctx'>" + ctx + " · " + (x.mode === "live" ? "live model" : "scripted mode") + (x.memory && x.memory.length ? " · " + x.memory.length + " saved memories" : "") + "</div>";
       if (x.stage) {
         side += "<div class='bw-sec'><h3>Stage</h3>" + stage(x.stage) + "<ul class='small muted' style='margin:6px 0 0;padding-left:18px'>" + x.stage.evidence.map(function (e) { return "<li>" + esc(e) + "</li>"; }).join("") + "</ul></div>";
         side += "<div class='bw-sec'><h3>Suggested next actions</h3><div style='display:flex;flex-direction:column;gap:6px'>" + (x.actions.length ? x.actions.map(actionCard).join("") : "<span class='muted small'>Nothing due right now.</span>") + "</div></div>";
       } else if (x.next_steps) {
-        side += "<div class='bw-sec'><h3>" + (B.as.persona === "kin" ? "Coming up" : "Still to do") + "</h3><ul class='bw-list'>" + x.next_steps.map(function (s) { return "<li><span>" + esc(s.title) + "</span><span class='muted small'>" + (/^\d{4}-/.test(s.when) ? d(s.when) : esc(s.when)) + "</span></li>"; }).join("") + "</ul></div>";
+        side += "<div class='bw-sec'><h3>" + (B.as.persona === "applicant" ? "Still to do" : "Right now") + "</h3><ul class='bw-list'>" + x.next_steps.map(function (s) { return "<li><span>" + esc(s.title) + "</span><span class='muted small'>" + (/^\d{4}-/.test(s.when) ? d(s.when) : esc(s.when)) + "</span></li>"; }).join("") + "</ul></div>";
       }
       var chat = "<div class='bw-sec'><h3>Chat</h3><div class='bw-msgs' id='bw-msgs'><div class='bw-msg assistant md'>" + md(x.greeting) + "</div>" + P.msgs.map(msg).join("") +
         (P.busy ? "<div class='bw-msg assistant muted'>Thinking…</div>" : "") + "</div></div>";
       chat += "<div class='bw-sugg'>" + x.suggestions.map(function (s) { return "<button type='button' data-bw='ask' data-arg='" + esc(s) + "'>" + esc(s) + "</button>"; }).join("") + "</div>";
       body = "<div class='ai-side' id='bw-side'>" + side + "</div><div class='ai-chat' id='bw-chat'>" + chat + "</div>";
     }
-    var what = B.as.persona === "caseworker" ? "this case" : B.as.persona === "kin" ? "the child, help, or next steps" : "your application";
+    var what = B.as.persona === "caseworker" ? "this case" : B.as.persona !== "applicant" ? "the child, money, approval or who to call" : "your application";
     var toggle = btn(B.full ? "⤡ Panel view" : "⤢ Full screen", "panel-full", null, "sm", " aria-pressed='" + B.full + "' title='" + (B.full ? "Back to the side panel" : "Open Binti AI full screen") + "'");
     return (B.full ? "" : "<div class='bw-scrim' data-bw='panel-close'></div>") + "<aside class='bw-panel" + (B.full ? " full" : "") + "' aria-label='Binti AI'><div class='ph'><h2>" + SPARK + " Binti AI</h2>" + toggle + btn("Close", "panel-close", null, "sm ghost") + "</div>" +
       "<div class='pb' id='bw-pb'>" + body + "</div><form data-bw-form='chat'><textarea name='q' rows='1' data-bw-input='chat-draft' placeholder='Ask about " + what + "' aria-label='Message Binti AI. Enter to send, Shift+Enter for a new line'" + (P.busy ? " disabled" : "") + ">" + esc(P.draft || "") + "</textarea>" +
@@ -466,7 +540,8 @@
       (src.length ? "Looked at: " + esc(src.join(", ")) + " · " : "") + esc(meta.mode || "") + ((meta.flags || []).length ? " · " + esc(meta.flags.join(", ")) : "") + "</span></div>";
   }
   function objRef() {
-    return B.as.persona === "caseworker" ? { object_type: "case", object_id: B.caseId } : B.as.persona === "kin" ? { object_type: "case", object_id: B.caseId } : { object_type: "application", object_id: null };
+    if (B.as.persona === "applicant") return { object_type: "application", object_id: null };
+    return { object_type: "case", object_id: B.caseId };
   }
   function openPanel() {
     B.panel = { open: true, data: null, msgs: [], busy: false, err: null, draft: B.panel.draft || "" };
@@ -525,10 +600,12 @@
       if (p[0] === "visit-note") A["visit-note"](p[1]);
       else if (p[0] === "prefill") A.prefill(p[1]);
       else if (p[0] === "outreach") A["first-contact"](p[1]);
+      else if (p[0] === "court-report") { B.panel.open = false; A["court-report"](p[1]); }
       else if (p[0] === "proposal") { B.panel.open = false; render(); var el = document.getElementById("prop-" + p[1]); if (el) el.scrollIntoView({ behavior: "smooth", block: "center" }); }
     },
     "visit-note": function (vid) { runWf("/workflows/visit-note", { case_id: B.caseId, visit_id: +vid }, "Draft note ready for your review."); },
     prefill: function (vid) { runWf("/workflows/prefill", { case_id: B.caseId, visit_id: +vid }, "Visit form pre-filled. Review each field."); },
+    "court-report": function (date) { runWf("/workflows/court-report", { case_id: B.caseId, hearing_date: date }, "Court report facts assembled. Write your recommendation, then sign."); },
     "first-contact": function (rid) { runWf("/workflows/first-contact", { case_id: B.caseId, relationship_id: +rid }, "First-contact message drafted for your review."); },
     "lang-check": function (pid) {
       var ta = document.querySelector("[data-bw-input='edit-" + pid + "']");
@@ -619,7 +696,7 @@
       B.view = "ws"; B.panel.open = false; render();
     } else if (/^#\/home/.test(hash) || hash === "" || hash === "#/") {
       if (B.as.persona === "applicant") { location.replace("#/application"); return; }
-      if (B.as.persona === "kin") { location.replace("#/cases"); return; }
+      if (B.as.persona === "kin" || B.as.persona === "foster") { location.replace("#/cases"); return; }
       B.view = "home"; B.panel.open = false; render(); loadHome();
     } else if ((m = hash.match(/^#\/case\/([\w-]+)$/))) {
       if (B.caseId !== m[1]) { B.panel.open = false; B.tab = "relationships"; B.detail = null; B.findings = {}; }
@@ -637,7 +714,7 @@
     var p = v.split(":"); B.as = { persona: p[0], user: p[1] }; save("bw.as", B.as);
     B.panel.open = false; B.detail = null; B.caseId = null; B.app = null; B.appDraft = null; B.findings = {};
     if (p[0] === "applicant") location.hash = "#/application";
-    else if (p[0] === "kin") api("/cases").then(function (r) { location.hash = "#/case/" + r.cases[0].case_id; }).catch(fail);
+    else if (p[0] === "kin" || p[0] === "foster") api("/cases").then(function (r) { location.hash = "#/case/" + r.cases[0].case_id; }).catch(fail);
     else { B.home = { data: null, msgs: [], busy: false, err: null, draft: "" }; if (location.hash === "#/home") route("#/home"); else location.hash = "#/home"; }
   }
 
@@ -665,6 +742,7 @@
     if (k === "f-q") { B.filters.q = e.target.value; render(); }
     else if (k === "chat-draft") { B.panel.draft = e.target.value; autosize(); }
     else if (k === "home-draft") { B.home.draft = e.target.value; autosize(); }
+    else if (k === "msg-draft") B.msgDraft = e.target.value;
     else if (k === "notes") B.notes = e.target.value;
     else if (k === "tri-name") B.triName = e.target.value;
     else if (k === "tri-text") B.triText = e.target.value;
@@ -672,6 +750,15 @@
   });
   document.addEventListener("submit", function (e) {
     var f = e.target.closest("form[data-bw-form]"); if (!f) return;
+    if (f.dataset.bwForm === "msg") {
+      e.preventDefault();
+      var t = f.q.value.trim(); if (!t) return;
+      api("/messages", { text: t }).then(function (r) {
+        B.msgDraft = ""; toast("Sent to " + r.to + ". Reply due by " + d(r.respond_by) + ".");
+        if (B.view === "app") loadApp(); else reloadCase(false);
+      }).catch(fail);
+      return;
+    }
     e.preventDefault(); var q = f.q.value.trim(); if (!q) return;
     f.q.value = "";
     if (f.dataset.bwForm === "home-chat") { B.home.draft = ""; homeAsk(q); } else { B.panel.draft = ""; ask(q); }

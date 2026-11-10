@@ -3,7 +3,7 @@ name: safety-disclosure
 description: Detect a possible safety disclosure about a child in any family message and escalate immediately to a named human. Runs on every kin and applicant message before the model sees it.
 allowed-tools: worker_contact_get
 metadata:
-  persona: kin, applicant
+  persona: kin, applicant, foster
   kind: guardrail
   phase: 1
   feature: Safety disclosure detection

@@ -302,6 +302,13 @@ details.persona > summary b { color: var(--c, var(--ink)); }
   <div class="toolbar"><span class="small muted" id="voiceCount"></span></div>
   <div id="voiceList" class="catblock"></div>
   <p class="small muted">Gathered November 2026 from public web search. Findings are paraphrased from source excerpts. Reddit threads appear through third-party mirrors. Check originals before quoting a number.</p>
+  <div class="card tint t-b"><h4>How the design answers the evidence (v1.2)</h4><ul class="tight">
+    <li>22 themes across the three personas. After v1.2, 19 are covered or partly covered in the journeys, the AI architecture and the prototype.</li>
+    <li><b>Caseworker:</b> relief before reward. Workload view, court report assembly in Phase 1, supervisor recognition of named work, no scores.</li>
+    <li><b>Kin caregiver:</b> supports that need no license from day one, time to first payment as a day count, parallel approval steps with stall alerts, care needs, SMS.</li>
+    <li><b>Prospective and foster parent:</b> who holds each item, a who-to-call card (worker, supervisor, after hours, behavior, legal, payments), a reply deadline that escalates to the supervisor, a payments explainer, and the journey extended to placement, the first year and adoption.</li>
+    <li><b>Outside software:</b> staffing levels and when kin get paid. <b>Needs integration:</b> double entry with state systems.</li>
+  </ul></div>
 </section>
 
 <section id="goals">
@@ -397,6 +404,10 @@ details.persona > summary b { color: var(--c, var(--ink)); }
     <li>Should courts, attorneys, CASA volunteers and Indigenous governing bodies be direct users with their own views, or should the platform exchange data with their systems?</li>
     <li>Which Canadian provinces and Australian states come first? Is French required in Canada?</li>
     <li>Is aging-out and transition planning meant to be a module? Nothing covers it today, though it is the fifth goal.</li>
+    <li>Can counsel approve sharing care needs with kin and foster parents, and which fields count as care needs in each state?</li>
+    <li>Which supports can kin get before licensing in each launch state, and can the agency start those applications?</li>
+    <li>How will drafts and status reach the state system without double entry?</li>
+    <li>Kin long-term path, the caseworker accept-a-case stage and court preparation are thin on public evidence. Prioritize them in interviews.</li>
   </ul></div>
   <div class="card src"><h4>Sources</h4><ul class="tight">
     <li><a href="https://binti.com/" target="_blank" rel="noopener">Binti: product modules and customers</a></li>
@@ -687,11 +698,12 @@ function personaModules(p) {
 /* Priority personas. ts = how the stage feels today, ps = intended feeling with the product, scale -2 to 2. ns = needs a surface not described on Binti's site. */
 var PRI = [
  { name: "Caseworker", cat: "Daily operators",
-   why: "Social workers are the first priority, and their work should feel rewarding. Caseworkers carry the biggest administrative load and touch the most modules, so time given back here helps every other team. This journey follows one case from the first day to close, with reward moments built in.",
+   why: "Social workers are the first priority. The evidence is about overload, not motivation: caseloads up to four times the recommended level, under 35% of time with families, and burnout that drives turnover. So the first job is relief: hand back documentation time and make workload visible. Recognition comes second and is never a score. This journey follows one case from the first day to close.",
    pr: ["Enter it once. What a worker says or records in the field should flow into notes, plans, court reports and state reporting.",
-        "Reward with time and progress. Show the hours handed back and the steps completed for each family. Keep scores and rankings away from anything about a child's outcome.",
+        "Relief before reward. Cut documentation first and show the hours handed back. Recognition names the work and never becomes a score or ranking tied to a child's outcome.",
         "Keep the worker in charge. AI drafts, and the worker reviews and signs."],
-   extra: { t: "Reward moments to design in", items: [
+   extra: { t: "Relief first, then recognition", items: [
+     "Workload view: cases against the recommended level, due this week, overdue, drafts to sign and court within 14 days, all from data.",
      "Time back: a weekly view of minutes saved per visit note and per court report.",
      "Progress made visible: relatives found, services started and plan steps completed for each family.",
      "Milestones: a quiet marker when a child is placed with kin, a family is reunified or a case closes at permanency, shared with the supervisor.",
@@ -709,20 +721,21 @@ var PRI = [
     { n: "Find and engage kin", g: "Find a relative who can care for the child.", fr: "Searches run across separate tools, trees are drawn by hand and outreach is tracked by hand.", fl: "Frustrated", ts: -1, ps: 2,
       pd: "Search records, see a genogram that updates itself, send templated outreach in the relative's language and see who has responded, all on the child's record.", m: "ffe,ai", sg: "Relatives identified and responding" },
     { n: "Prepare for court", g: "Give the court a clear, accurate report.", fr: "Facts are pulled from many places the night before.", fl: "Pressured", ts: -2, ps: 0,
-      pd: "A court report drafts itself from visit notes, plan progress, services and kin efforts. The worker edits and approves, and efforts to find relatives are already documented.", m: "cm,ffe,ai", sg: "Hours to prepare a report" },
+      pd: "A court report drafts itself from visit notes, plan progress, services and kin efforts, each line with its source. The recommendation section is always left for the worker. Built in Phase 1, because court paperwork is a named burnout driver.", m: "cm,ffe,ai", sg: "Hours to prepare a report, after-hours work" },
     { n: "Reach permanency and close", g: "Finish well and move on.", fr: "Closing data and reports are re-entered, and nothing marks the outcome.", fl: "Drained", ts: 0, ps: 2,
       pd: "A closing checklist pre-fills from the case, compliance data has been captured as the work happened, and the case shows its outcome, such as a child placed with kin, to the worker and supervisor.", m: "cm,rpt", sg: "Time to close, data corrections" }
    ] },
  { name: "Prospective foster or adoptive parent", cat: "People served and caregivers",
    why: "New parents applying for a license are the second priority. They are the supply of homes, so every delay here is a child waiting longer. The whole journey sits in the licensing module, which makes it the clearest place to start.",
-   pr: ["Always show where the family is, what is left and what happens next.",
+   pr: ["Always show where the family is, what is left, who holds each item and what happens next.",
+        "Always name a person. Every message has a reply deadline, and an unanswered one goes to the supervisor.",
         "Ask once. Reuse everything the family has already given.",
         "Mobile first, plain language, and in the family's own language."],
    st: [
     { n: "Explore", g: "Decide whether to foster or adopt, and what it takes.", fr: "The process is hard to understand and the timeline is unclear.", fl: "Curious, unsure", ts: 0, ps: 1, ns: 1,
       pd: "A plain-language page shows the steps, a typical timeline and what each step asks of the family, with a clear way to start on a phone.", m: "lic", sg: "Visitors who start an inquiry" },
     { n: "Inquire", g: "Get a person and a next step.", fr: "Finds the agency, submits an inquiry, then waits.", fl: "Waiting", ts: -1, ps: 1,
-      pd: "A short inquiry captures the basics and routes to a named worker, with an acknowledgement and the next step.", m: "lic", sg: "Time to first response" },
+      pd: "A short inquiry captures the basics and routes to a named worker, with an acknowledgement, the next step and a reply deadline. Not hearing back is the most consistent complaint, so response time is tracked.", m: "lic", sg: "Time to first response, share answered within the deadline" },
     { n: "Apply", g: "Finish the application without starting over.", fr: "Paper forms and repeated entry.", fl: "Frustrated", ts: -1, ps: 1,
       pd: "A mobile application saves as the family goes, resumes on any device and shows progress. What is entered once feeds every later form.", m: "lic,ai", sg: "Completion rate, time to submit" },
     { n: "Complete requirements", g: "Know exactly what is outstanding.", fr: "Unsure what is outstanding, and documents are requested again.", fl: "Anxious", ts: -2, ps: 1,
@@ -730,13 +743,21 @@ var PRI = [
     { n: "Home study", g: "Prepare for the visit and get through it.", fr: "The family does not know in advance what the visit checks (to validate).", fl: "Nervous", ts: -1, ps: 1,
       pd: "A booking step and a checklist of what the visit covers. The worker completes the forms digitally during the visit, with a draft from Binti AI.", m: "lic,ai", sg: "Days from booking to completed study" },
     { n: "Approval and wait", g: "Know when a decision will come.", fr: "A long, unclear wait with little visibility.", fl: "Left waiting", ts: -2, ps: 0,
-      pd: "Status shows where the application sits, what remains and an expected timeframe. The approval notice arrives with the next steps.", m: "lic", sg: "Status enquiries by phone, days to approval" },
+      pd: "Each pending item shows who holds it, since when and its usual range. Items past their range are flagged to the supervisor. A payments page explains monthly rates and reimbursements before placement.", m: "lic", sg: "Status enquiries by phone, days to approval, stalled items" },
     { n: "Get matched", g: "Start with confidence.", fr: "Little guidance on a first placement.", fl: "Uncertain", ts: 0, ps: 2,
-      pd: "Preferences and capacity go to placement. The family gets a placement call that describes the child's needs in plain terms, and a named contact for the first weeks.", m: "lic,plc,ai", sg: "Placements accepted, support contacts in month one" }
+      pd: "Preferences and capacity go to placement. The family gets a placement call that describes the child's needs in plain terms, and a named contact for the first weeks.", m: "lic,plc,ai", sg: "Placements accepted, support contacts in month one" },
+    { n: "First placement", g: "Know the child's needs and who to call.", fr: "Thin information at placement, and calls from several workers.", fl: "Unprepared", ts: -2, ps: 1, ns: 1,
+      pd: "Care needs (routines, health, school, what helps) shared through the disclosure matrix, without the reason for removal. One card lists the worker, supervisor, after-hours, 24-hour behavior support and caregiver legal help.", m: "cm,plc", sg: "Calls to the after-hours line, placement disruptions" },
+    { n: "The first year", g: "Get paid on time and get support.", fr: "Late payments, unclear reimbursements, nobody to call when behavior escalates.", fl: "Stretched", ts: -1, ps: 1, ns: 1,
+      pd: "Monthly payment with last and next dates, pending reimbursements against their usual range, respite, a peer mentor and a reply deadline on every message.", m: "elg,cm", sg: "Late payments, reimbursement days, foster parent retention" },
+    { n: "Adoption to finalization", g: "See the path to finalization.", fr: "Finalization can take years with no visibility.", fl: "Left waiting", ts: -2, ps: 1, ns: 1,
+      pd: "Each adoption step with who holds it and its usual timing, plus adoption assistance. No predicted dates.", m: "cm", sg: "Months to finalization, status enquiries" }
    ] },
  { name: "Kin caregiver", cat: "People served and caregivers",
    why: "The third priority is a persona with a lot of friction today. Kin caregivers hit problems at every stage, from the first call to the long-term plan, and placing children with kin is a stated goal of the platform. Most of the fix uses modules that already exist.",
    pr: ["Start from the shock. The first contact is often a surprise, so explain it plainly and in their language.",
+        "Money comes first. Placed in hours, paid after months: start the supports that need no license on day one.",
+        "Meet them where they are: SMS and phone, not only an app.",
         "Show what is needed now and what can wait.",
         "Treat them as caregivers who need support, not only as applicants."],
    st: [
@@ -745,11 +766,11 @@ var PRI = [
     { n: "Weigh the decision", g: "Know what saying yes involves.", fr: "Requirements are unclear and each option is poorly explained.", fl: "Overwhelmed", ts: -2, ps: 0, ns: 1,
       pd: "A short guide sets out the options (care, contact, support), the approval steps, the financial help available and the legal paths, in plain terms.", m: "ffe", sg: "Questions put to the worker" },
     { n: "Say yes", g: "Get the child safely into their care.", fr: "The child may be placed while approval is still running.", fl: "Stretched", ts: -2, ps: 0,
-      pd: "Shows what is required now and what can follow, and records the response in the child's family network. Rules for placing before approval vary by jurisdiction.", m: "ffe,plc", sg: "Time from yes to placement" },
+      pd: "Shows what is required now and what can follow, shares the child's care needs (never the reason for removal) and records the response in the child's family network. Rules for placing before approval vary by jurisdiction.", m: "ffe,plc", sg: "Time from yes to placement" },
     { n: "Get approved", g: "Complete approval without repeating themselves.", fr: "Checks and home requirements start from zero.", fl: "Anxious", ts: -1, ps: 1,
-      pd: "Information already gathered in family finding carries into the approval steps, with a checklist and status the caregiver can see.", m: "lic,ffe", sg: "Days to approval, repeated requests" },
+      pd: "Information already gathered in family finding carries into approval. Steps run in parallel, each shows who holds it, and anything past its usual time is flagged to the supervisor. Agency target 90 days against a national average near 160.", m: "lic,ffe", sg: "Days to approval, repeated requests" },
     { n: "The first weeks", g: "Get money and services in place.", fr: "Fewer supports than licensed parents, and financial strain.", fl: "Strained", ts: -2, ps: 0, ns: 1,
-      pd: "One list of what the caregiver can apply for (financial help, services, supports), with applications started from what the agency already knows and a named contact.", m: "elg,prv", sg: "Time to first payment, supports in use" },
+      pd: "Help you can get now: supports that need no license (cash grant, health coverage, clothing and bed voucher, food assistance, kinship navigator), time to first payment shown as a day count, and who to call for money, behavior and legal questions.", m: "elg,prv", sg: "Time to first payment, supports in use" },
     { n: "Everyday care", g: "Handle school, health, visits and court.", fr: "Information arrives by phone or email.", fl: "Stretched", ts: -1, ps: 1, ns: 1,
       pd: "A caregiver view with the child's appointments, visits, court dates and contacts.", m: "cm", sg: "Missed appointments, calls to the worker" },
     { n: "Plan the long term", g: "Understand and choose a permanent path.", fr: "The legal path to guardianship or adoption is unclear.", fl: "Uncertain", ts: -1, ps: 1, ns: 1,

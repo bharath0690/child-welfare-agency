@@ -280,3 +280,57 @@ def application_help(ident, field, notes):
     prop = gateway.call(ident, "application_field_draft", {"field": field, "value": text})
     return {"proposal": prop, "field": field, "label": FIELD_LABELS[field], "draft": text, "mode": mode,
             "banner": "Binti AI draft from your own notes. Edit it so it sounds like you, then submit."}
+
+
+# ------------------------------------------------------------------------------------------------------
+# Caseworker: court report assembly (skill: court-report-assembly). Cited facts only; the worker writes
+# the recommendation. Moved to Phase 1 because report prep is one of the heaviest documentation loads.
+# ------------------------------------------------------------------------------------------------------
+def court_report(ident, case_id, hearing_date):
+    g = lambda t, **k: gateway.call(ident, t, {"case_id": case_id, **k})
+    c = g("case_get")
+    hearing = next((h for h in g("court_dates_list") if h["on_date"] == hearing_date), None)
+    if not hearing:
+        raise gateway.GatewayError("not_found", "No hearing on that date for this case.")
+    ch, p = c["child"], c.get("placement") or {}
+    visits = g("visits_list")
+    notes = db.rows("SELECT on_date, body FROM notes WHERE case_id=? AND status='signed' ORDER BY on_date DESC LIMIT 3", (case_id,))
+    plan, refs, rels = g("plan_get"), g("referrals_list"), g("relationships_list")
+    reached = [r for r in rels if r["contact_status"] == "Successfully Contacted"]
+    lines = [f"COURT REPORT DRAFT: {hearing['hearing']}, {hearing['on_date']}",
+             f"Child: {ch['name']}, age {ch['age']}. Case {c['case_no']}. Worker: {c['worker']}. (Source: case record)", "",
+             "1. Placement",
+             f"- Placed with {p.get('caregiver', 'not recorded')} ({p.get('kind', '')}) since {p.get('start_on', '')}. (Source: placements)", "",
+             "2. Visits since the last hearing"]
+    lines += [f"- {v['on_date']}: {v['kind']} at {v['location']}, note {v['note_status']}. (Source: visit log)" for v in visits[:4]] or ["- None recorded."]
+    if notes:
+        lines += ["", "3. From signed visit notes"]
+        lines += [f"- {n['on_date']}: {n['body'][:220].strip()}{'...' if len(n['body']) > 220 else ''} (Source: signed note {n['on_date']})" for n in notes]
+    lines += ["", "4. Case plan progress"]
+    lines += [f"- {gl['goal']}: {gl['status']}. (Source: case plan)" for gl in plan] or ["- No agreed plan yet."]
+    lines += ["", "5. Services and referrals"]
+    lines += [f"- {r['provider']}, {r['service']}: {r['status']}" + (f", sent {r['sent_on']}" if r["sent_on"] else "") + ". (Source: referral log)" for r in refs] or ["- None."]
+    lines += ["", "6. Efforts to find and engage relatives",
+              f"- {len(reached)} of {len(rels)} identified relatives reached. (Source: relationships)"]
+    lines += [f"- {r['name']} ({r['relation']}): {r['contact_status']}" + (f", last contact {r['last_contact_on']}" if r["last_contact_on"] else "") + "." for r in rels]
+    lines += ["", "7. Recommendation",
+              "[Written by the caseworker. Binti AI does not draft recommendations on placement, custody or reunification.]"]
+    body = "\n".join(lines)
+    prop = gateway.call(ident, "court_report_draft", {"case_id": case_id, "hearing_date": hearing_date, "body": body})
+    return {"proposal": prop, "body": body, "mode": "rules",
+            "banner": "Binti AI draft of cited facts. Check each line, write the recommendation, then sign."}
+
+
+def caseworker_workload(ident):
+    """Workload view for the caseworker home: what is on the worker's plate, from telemetry and rules (no model)."""
+    rows = [stages.list_row(ident, c["case_id"]) for c in gateway.call(ident, "cases_list_assigned")]
+    today = date.today()
+    due_week = sum(1 for r in rows if r["next_due"] and 0 <= (date.fromisoformat(r["next_due"]) - today).days <= 7)
+    overdue = sum(1 for r in rows if "Overdue task" in r["flags"] or "Visit overdue" in r["flags"])
+    drafts = db.row("SELECT COUNT(*) n FROM proposals p JOIN cases c ON c.id=p.object_id WHERE p.object_type='case' AND p.status='pending' "
+                    "AND c.worker_id=?", (ident.user_id,))["n"]
+    court = sum(1 for r in rows if "Court soon" in r["flags"])
+    recog = db.rows("SELECT from_name, case_id, text, on_date FROM recognitions WHERE worker_id=? ORDER BY on_date DESC LIMIT 2", (ident.user_id,))
+    return {"cases": len(rows), "recommended": 12, "due_this_week": due_week, "overdue": overdue, "drafts_to_sign": drafts,
+            "court_within_14": court, "recognition": recog,
+            "note": "Recommended caseload of about 12 is from national guidance cited in public reporting. Counts come from case data, not a model."}
