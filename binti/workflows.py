@@ -312,7 +312,7 @@ def court_report(ident, case_id, hearing_date):
     lines += [f"- {r['provider']}, {r['service']}: {r['status']}" + (f", sent {r['sent_on']}" if r["sent_on"] else "") + ". (Source: referral log)" for r in refs] or ["- None."]
     lines += ["", "6. Efforts to find and engage relatives",
               f"- {len(reached)} of {len(rels)} identified relatives reached. (Source: relationships)"]
-    lines += [f"- {r['name']} ({r['relation']}): {r['contact_status']}" + (f", last contact {r['last_contact_on']}" if r["last_contact_on"] else "") + "." for r in rels]
+    lines += [f"- {r['name']} ({r['relation']}): {r['contact_status']}" + (f", last contact {r['last_contact_on']}" if r["last_contact_on"] else "") + ". (Source: relationships)" for r in rels]
     lines += ["", "7. Recommendation",
               "[Written by the caseworker. Binti AI does not draft recommendations on placement, custody or reunification.]"]
     body = "\n".join(lines)

@@ -42,7 +42,8 @@ def run_case(c):
     e, errs, got = c["expect"], [], ""
     t = c["type"]
     if t == "chat":
-        out = agent.chat(ident(c), "case" if c["persona"] != "applicant" else "application", c.get("object_id"), c["input"])
+        obj = c.get("object") or ("case" if c["persona"] != "applicant" else "application")
+        out = agent.chat(ident(c), obj, c.get("object_id"), c["input"])
         meta, got = out["meta"], out["reply"]
         if "escalated" in e and bool(meta.get("escalated")) != e["escalated"]:
             errs.append(f"escalated={bool(meta.get('escalated'))}")
@@ -68,6 +69,10 @@ def run_case(c):
             for f in e.get("fields_include", []):
                 if f not in res:
                     errs.append(f"missing field {f}")
+            blob = json.dumps(res, default=str).lower()
+            for v in e.get("values_exclude", []):
+                if v.lower() in blob:
+                    errs.append(f"value contains forbidden {v!r}")
         except G.GatewayError as ex:
             got = ex.code
             if ex.code != e.get("error_code"):
@@ -121,6 +126,23 @@ def run_case(c):
                     errs.append(f"{k}.confidence={f.get('confidence')}")
             if w != "language_check":
                 text_checks(got if isinstance(got, str) else "", e, errs)
+            if e.get("fact_lines_cited"):
+                facts = [ln for ln in (got or "").splitlines() if ln.startswith("- ") and not ln.startswith(("- None", "- No "))]
+                bare = [ln[:60] for ln in facts if "(Source:" not in ln]
+                if not facts or bare:
+                    errs.append(f"uncited fact lines: {bare or 'no facts'}")
+    elif t == "workload":
+        out = workflows.caseworker_workload(ident(c))
+        got = {k: v for k, v in out.items() if k != "recognition"}
+        for f in e.get("fields_include", []):
+            if f not in out:
+                errs.append(f"missing field {f}")
+        for f in e.get("fields_exclude", []):
+            if f in out:
+                errs.append(f"has field {f}")
+        if e.get("recognition_required") and not out.get("recognition"):
+            errs.append("no recognition")
+        text_checks(" ".join(r["text"] for r in out.get("recognition", [])), e, errs)
     elif t == "stage":
         i = ident(c)
         got = {cid: stages.stage(stages.bundle(i, cid))[0] for cid in e["stages"]}

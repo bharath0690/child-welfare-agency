@@ -427,6 +427,15 @@ class Fallback:
         if unknown:
             return (f"I don't see **{unknown[0]}** in your assigned cases. I can only look at your own caseload:\n" + "\n".join(
                 f"- **{c['child']}** ({c['case_no']})" for c in cases))
+        if has("caseload limit", "caseload size", "workload", "how many cases", "too many cases", "over my", "my load", "too much work"):
+            from . import workflows
+            w = workflows.caseworker_workload(self.i)
+            over = w["cases"] - w["recommended"]
+            return (f"You have **{w['cases']} cases** against a recommended level of about {w['recommended']}"
+                    + (f" ({over} over)." if over > 0 else ".") +
+                    f" Due this week: {w['due_this_week']}. Overdue: {w['overdue']}. Drafts to sign: {w['drafts_to_sign']}. "
+                    f"Court within 14 days: {w['court_within_14']}. (Source: case data, counted by rules, not a model.) "
+                    "If this is more than you can carry, raise it with your supervisor; I can draft the notes and reports so the time goes to families.")
         if has("reunif", "recommend", "custody", "placement decision", "risk score", "high risk"):
             return ("I can't recommend placement, custody, reunification, eligibility or risk decisions. Those are yours, your supervisor's "
                     "and the court's. Name a child and I'll pull the facts and sources you need.")
@@ -489,6 +498,15 @@ class Fallback:
                "terminate", "should be adopted", "risk score", "risk level", "high risk", "how risky", "is eligible", "are eligible"):
             return ("I can't recommend placement, custody, reunification, eligibility or risk decisions. Those are yours, your supervisor's and the court's. "
                     "I can pull the facts and sources you need: try \"summarize this case\", \"what did the child say about visits?\" or \"when is court?\"")
+        if has("caseload limit", "caseload size", "workload", "how many cases", "too many cases", "over my", "my load", "too much work"):
+            from . import workflows
+            w = workflows.caseworker_workload(self.i)
+            over = w["cases"] - w["recommended"]
+            return (f"You have **{w['cases']} cases** against a recommended level of about {w['recommended']}"
+                    + (f" ({over} over)." if over > 0 else ".") +
+                    f" Due this week: {w['due_this_week']}. Overdue: {w['overdue']}. Drafts to sign: {w['drafts_to_sign']}. "
+                    f"Court within 14 days: {w['court_within_14']}. (Source: case data, counted by rules, not a model.) "
+                    "If this is more than you can carry, raise it with your supervisor; I can draft the notes and reports so the time goes to families.")
         if has("remember", "note that", "keep in mind"):
             fact = re.sub(r"^(please )?(remember|note that|keep in mind)( that)?[:,]?\s*", "", raw.strip(), flags=re.I)
             self.call("memory_note", {**self.cid(), "fact": fact})
@@ -629,7 +647,7 @@ class Fallback:
             focus = (["Behavior support", "After-hours line", "Emergency", "Your worker"] if has("behavior", "behaviour", "tantrum") else
                      ["Legal questions", "Your worker"] if has("legal", "lawyer") else None)
             return self._contacts(focus) + self._messages()
-        if has("money", "pay", "financial", "help with", "help can i get", "right now", "clothes", "afford", "benefit", "support",
+        if has("money", "pay", "paid", "financial", "help with", "help can i get", "right now", "clothes", "afford", "benefit", "support",
                "dinero", "ayuda", "grant", "voucher"):
             return self._money()
         if has("how long", "taking so long", "where is my", "up to", "status", "my approval", "license", "licence", "background check",
@@ -684,7 +702,7 @@ class Fallback:
         if has("adopt", "finaliz", "termination", "parental rights", "tpr", "assistance agreement", "subsidy", "appeal"):
             a = self.call("adoption_status_get")
             return self._steps(a["steps"], "Where the adoption is up to (Source: case record):") + f"\n\n{a['context']} {a['note']}"
-        if has("pay", "money", "reimburs", "stipend", "mileage", "late", "respite", "support", "benefit"):
+        if has("pay", "paid", "money", "reimburs", "stipend", "mileage", "late", "respite", "support", "benefit"):
             return self._money()
         if has("need", "routine", "nap", "sleep", "eat", "bottle", "what helps", "calm", "settle"):
             return self._care_needs()
@@ -715,9 +733,10 @@ class Fallback:
         if has("not hearing", "no one", "nobody", "no reply", "not answering", "escalat", "supervisor", "who do i contact",
                "who do i call", "who to call", "ignored"):
             return self._contacts(["Your worker", "Their supervisor", "Peer mentor"]) + self._messages()
-        if has("pay", "money", "reimburs", "stipend", "cost", "afford", "benefit"):
+        if has("pay", "paid", "money", "reimburs", "stipend", "cost", "afford", "benefit"):
             return self._program("foster care payments reimbursement monthly", "How payments work once a child is placed with you:")
-        if has("missing", "left", "outstanding", "checklist", "need to do", "still need", "next", "who has", "taking so long", "stuck"):
+        if has("missing", "left", "outstanding", "checklist", "need to do", "still need", "next", "who has", "taking so long", "stuck",
+               "holding", "hold up", "held up", "delay"):
             items = [i for i in self.call("checklist_get") if i["status"] != "done"]
             return "Here's what's left, and who has each item (Source: your checklist):\n" + "\n".join(
                 f"- **{i['item']}**: {i['status']}. Who has it: {i.get('holder', 'agency')}" +

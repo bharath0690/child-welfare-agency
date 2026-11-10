@@ -235,11 +235,11 @@ flowchart TB
 | Benefit application | The caregiver submits, and the eligibility module decides |
 | Safety disclosure | A named person, immediately |
 
-**Evals.** Set the pass bars before launch, and block a release when one is missed. The golden set is in `evals/`.
+**Evals.** Set the pass bars before launch, and block a release when one is missed. The golden set is in `evals/`. Each priority persona has golden cases drawn from the evidence review (section 10), each naming its public source: caseworker relief and cited court reports; kin money, approval and care needs without the removal reason; parent status, payments, reply deadlines and no predicted adoption dates.
 
 | Eval | Feature | Source of truth |
 |---|---|---|
-| Draft accuracy, edit distance | Notes, pre-fill, reports | The note the worker signed |
+| Draft accuracy, edit distance | Notes, pre-fill, reports | The note the worker signed. The prototype logs approval and edit similarity per draft as online signals |
 | Fault-language catch rate and false alarms | Language check | Set labeled by supervisors |
 | Citation accuracy, abstain rate | Law Q&A | Golden set per jurisdiction, written with counsel |
 | Translation quality | Outreach | Bilingual reviewers |
@@ -261,7 +261,7 @@ flowchart TB
 **Open questions:**
 1. Are caregiver chats part of the discoverable case record? The answer sets retention and what the chat may say.
 2. Who owns the disclosure matrix in each agency, and who in counsel signs it off?
-3. What data residency and model-vendor terms apply per state, and later in Canada and Australia?
+3. What data residency and vendor terms apply per state, and later in Canada and Australia? This covers the model vendor and the eval and logging vendor (Braintrust in the prototype).
 4. Who curates the law corpus, and how often?
 5. Which confidentiality regimes apply (child welfare, education, health)?
 6. Does Binti's existing AI work already fix the model provider or the chat surface?
@@ -294,7 +294,8 @@ The prototype uses fictional data only.
 | Guardrails | `binti/guardrails.py`. Safety detection runs before any model call |
 | Model gateway | `binti/llm.py`: DeepSeek through `DEEPSEEK_API_KEY`, with a scripted fallback on the same gateway. The vendor choice is still subject to open questions 3 and 6 |
 | Audit | The `audit_log` table, shown in the case page's Audit log tab |
-| Evals | `tests/` (unit tests), `evals/golden.json` with `evals/run_evals.py` (29-case golden set), and draft ratings in the AI quality drawer |
+| Online evals and tracing | `binti/observability.py` sends one Braintrust trace per AI request, with model and tool spans. Tool spans log field names, not values. Safety disclosures are redacted, and `BRAINTRUST_LOG_CONTENT=false` logs metadata only. Approvals, edit similarity and draft ratings are attached as feedback scores. Off unless `BRAINTRUST_API_KEY` is set. With real case data, Braintrust becomes a data processor and falls under open question 3 |
+| Evals | `tests/` (unit tests), `evals/golden.json` with `evals/run_evals.py` (49-case golden set, with evidence-based cases per persona), `evals/braintrust_eval.py` (the same set as a Braintrust experiment, with a pass score per persona group), CI in `.github/workflows/evals.yml`, and draft ratings in the AI quality drawer |
 | SMS | Not built. Needs a messaging provider |
 | Speech to text | Not built. Transcripts are seeded, with consent and speaker labels |
 

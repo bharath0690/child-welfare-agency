@@ -12,6 +12,8 @@ import os
 import urllib.error
 import urllib.request
 
+from . import observability as obs
+
 
 class LLMError(Exception):
     pass
@@ -27,6 +29,15 @@ def model_name() -> str:
 
 def chat(messages, tools=None, temperature=0.3, max_tokens=900, json_mode=False, timeout=45):
     """Return the assistant message dict: {"content": str|None, "tool_calls": [...]}."""
+    with obs.child_span("llm: " + model_name(), "llm", input=messages,
+                        metadata={"model": model_name(), "temperature": temperature, "tools": len(tools or [])}) as log:
+        msg, usage = _chat(messages, tools, temperature, max_tokens, json_mode, timeout)
+        log(output=msg, metrics={"prompt_tokens": usage.get("prompt_tokens"), "completion_tokens": usage.get("completion_tokens"),
+                                 "tokens": usage.get("total_tokens")})
+        return msg
+
+
+def _chat(messages, tools, temperature, max_tokens, json_mode, timeout):
     if not enabled():
         raise LLMError("No DEEPSEEK_API_KEY set")
     body = {"model": model_name(), "messages": messages, "temperature": temperature, "max_tokens": max_tokens}
@@ -47,6 +58,6 @@ def chat(messages, tools=None, temperature=0.3, max_tokens=900, json_mode=False,
     except (urllib.error.URLError, TimeoutError, OSError) as e:
         raise LLMError(f"Model provider unreachable: {e}") from None
     try:
-        return data["choices"][0]["message"]
+        return data["choices"][0]["message"], data.get("usage") or {}
     except (KeyError, IndexError):
         raise LLMError("Unexpected response from model provider") from None

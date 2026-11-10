@@ -1,0 +1,26 @@
+name: Evals
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  golden:
+    runs-on: ubuntu-latest
+    env:
+      BRAINTRUST_API_KEY: ${{ secrets.BRAINTRUST_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Unit tests
+        run: python -m unittest discover -s tests
+      - name: Golden set (release gate on critical cases)
+        run: python evals/run_evals.py
+      - name: Send the golden set to Braintrust as an experiment
+        if: env.BRAINTRUST_API_KEY != ''
+        run: python evals/braintrust_eval.py
