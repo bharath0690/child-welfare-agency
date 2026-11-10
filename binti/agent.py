@@ -13,7 +13,8 @@ from pathlib import Path
 from . import db, gateway, guardrails, llm, skills, stages
 
 ROOT = Path(__file__).resolve().parent.parent
-PERSONA_HEADINGS = {"caseworker": "Persona: Caseworker", "applicant": "Persona: Prospective parent", "kin": "Persona: Kin caregiver"}
+PERSONA_HEADINGS = {"caseworker": "Persona: Caseworker", "applicant": "Persona: Prospective parent", "kin": "Persona: Kin caregiver",
+                    "foster": "Persona: Licensed foster parent"}
 MAX_STEPS = 6
 
 
@@ -35,7 +36,7 @@ def system_prompt_parts(persona):
 def resolve_object(ident, obj_type, obj_id):
     if ident.persona == "applicant":
         return "application", ident.applicant_id
-    if ident.persona == "kin":
+    if ident.persona in gateway.CAREGIVERS:
         case = db.row("SELECT id FROM cases WHERE child_id=?", (ident.child_id,))
         return "case", case["id"]
     if obj_type == "caseload":
@@ -139,12 +140,20 @@ def snapshot(ident, obj):
         case["child"].pop("avatar_svg", None)
         return {"object": f"case {obj[1]}", "case": case, "stage": st["stage"],
                 "next_actions": [{"id": a["id"], "title": a["title"], "why": a["why"], "pinned": bool(a["pinned"])} for a in st["actions"][:6]]}
-    if ident.persona == "kin":
+    if ident.persona in gateway.CAREGIVERS:
         ch = gateway.call(ident, "child_details_get")
         ch.pop("avatar_svg", None)
-        return {"object": "the child in your care", "child": ch, "schedule": gateway.call(ident, "child_schedule_get")}
+        snap = {"object": "the child in your care", "child": ch, "schedule": gateway.call(ident, "child_schedule_get"),
+                "care_needs": gateway.call(ident, "care_needs_get"), "contacts": gateway.call(ident, "contacts_get"),
+                "supports": gateway.call(ident, "supports_get"), "messages": gateway.call(ident, "messages_get")[:3]}
+        if ident.persona == "kin":
+            snap["approval"] = gateway.call(ident, "approval_status_get")
+        else:
+            snap["adoption"] = gateway.call(ident, "adoption_status_get")
+        return snap
     return {"object": "your application", "application": gateway.call(ident, "application_get"),
-            "checklist": gateway.call(ident, "checklist_get")}
+            "checklist": gateway.call(ident, "checklist_get"), "contacts": gateway.call(ident, "contacts_get"),
+            "messages": gateway.call(ident, "messages_get")[:3]}
 
 
 def suggestions(ident, snap):
@@ -155,12 +164,15 @@ def suggestions(ident, snap):
     if ident.persona == "caseworker":
         return ["What should I do next on this case?", "Summarize this case for me", "Which relatives haven't we reached?",
                 "When is court and what's due?"]
+    first = snap.get("child", {}).get("first", "the child")
     if ident.persona == "kin":
-        first = snap["child"].get("first", "the child")
-        return [f"What's coming up for {first}?", "What help can I get with money and supplies?",
-                "Can I keep caring for them before I'm approved?", "How do I reach the caseworker?"]
-    return ["What's still missing from my application?", "What happens at the home study?", "How long does this usually take?",
-            "Help me answer 'Why do you want to foster?'"]
+        return ["What help can I get right now, before I'm licensed?", "Where is my approval up to?",
+                f"What does {first} need day to day?", "Who do I call if something goes wrong?"]
+    if ident.persona == "foster":
+        return ["Where is the adoption up to?", "When is my next payment?",
+                f"What's coming up for {first}?", "Who do I call about behavior or legal questions?"]
+    return ["What's still missing, and who has it?", "Who do I contact if I'm not hearing back?",
+            "How do foster care payments work?", "Help me answer 'Why do you want to foster?'"]
 
 
 def greeting(ident, snap):
@@ -177,8 +189,12 @@ def greeting(ident, snap):
                 f"I found {n} next action{'s' if n != 1 else ''}, listed by urgency. Pin the ones you want first, or ask me anything about the case.")
     if ident.persona == "kin":
         ch = snap["child"].get("first", "the child")
-        return (f"Hi {first}. Thank you for caring for {ch}. I can help with {ch}'s schedule, what help is available, and "
-                "how to reach the caseworker. You can ask me in English or Spanish. What's on your mind?")
+        return (f"Hi {first}. Thank you for caring for {ch}. I can show you help you can get right now without a license, where your "
+                f"approval is up to, what {ch} needs day to day, and who to call for what. You can ask me in English or Spanish.")
+    if ident.persona == "foster":
+        ch = snap["child"].get("first", "the child")
+        return (f"Hi {first}. Thank you for caring for {ch}. I can help with {ch}'s schedule and needs, payments and reimbursements, "
+                "where the adoption is up to, and who to call for behavior or legal questions.")
     return (f"Hi {first}. You're at the \"{snap['application']['stage']}\" step. I can explain what's left, help you write "
             "your answers in your own words, and tell you who to call. What would help most?")
 
@@ -200,7 +216,11 @@ def open_panel(ident, obj_type, obj_id):
         out["stage"] = snap["stage"]
         out["actions"] = stages.ordered(obj[1])
     elif ident.persona == "kin":
-        out["next_steps"] = [{"title": f"{x['what']}", "when": x["date"]} for x in snap["schedule"][:3]]
+        out["next_steps"] = [{"title": "Time to first payment", "when": snap["supports"]["time_to_first_payment"]}] + [
+            {"title": x["item"], "when": x["holder"]} for x in snap["approval"]["items"] if x["status"] not in ("done", "reused")][:3]
+    elif ident.persona == "foster":
+        out["next_steps"] = [{"title": "Next payment", "when": snap["supports"]["next_payment_on"]}] + [
+            {"title": x["item"], "when": x["holder"]} for x in snap["adoption"]["steps"] if x["status"] != "done"][:3]
     else:
         out["next_steps"] = [{"title": i["item"], "when": i["status"]} for i in snap["checklist"] if i["status"] not in ("done",)][:4]
     return out
@@ -217,7 +237,7 @@ def chat(ident, obj_type, obj_id, message):
     g = guardrails.check_input(message, ident.persona)
     _save(ident, obj, "user", message, {"emotions": g["emotions"], "injection": g["injection"]})
 
-    if g["safety"] and ident.persona in ("kin", "applicant"):
+    if g["safety"] and ident.persona in ("kin", "applicant", "foster"):
         reply, meta = _escalate(ident, obj, message)
     else:
         meta = {"emotions": g["emotions"], "tools": [], "sources": [], "flags": []}
@@ -339,6 +359,10 @@ OPENERS = {
             "grieving": "This is hard, for you and for the child. You're not alone in it.",
             "frustrated": "I'm sorry you've been waiting. Let's get you an answer.",
             "money_strain": "Money worries are real, and there is help you can ask about."},
+    "foster": {"overwhelmed": "That's a lot to carry. Let's take one thing at a time.",
+               "worried": "It makes sense to worry. You're not on your own with this.",
+               "frustrated": "I'm sorry you've been waiting. Here's exactly where things stand and who can move it.",
+               "money_strain": "Money worries are real. Here's what you're owed and who fixes late payments."},
     "applicant": {"worried": "Lots of families feel nervous at this point. That's normal.",
                   "frustrated": "I'm sorry it's felt slow. Here's exactly where things stand.",
                   "overwhelmed": "Let's break it into small steps."},
@@ -542,17 +566,87 @@ class Fallback:
                 "\"which relatives haven't we reached?\" or \"when is court?\".")
 
     # --- kin --------------------------------------------------------------------------------------------
+    # --- shared by kin, foster parents and applicants ------------------------------------------------
+    def _contacts(self, focus=None):
+        cs = self.call("contacts_get")
+        if focus:
+            pick = [c for c in cs if c["role"] in focus]
+            cs = pick or cs
+        return "Who to call for what (Source: your agency's contact list):\n" + "\n".join(
+            f"- **{c['role']}:** " + (c["name"] + ", " if c["name"] != c["phone"] else "") + f"{c['phone']} ({c['hours']}). {c['use_for']}" for c in cs)
+
+    def _messages(self):
+        ms = self.call("messages_get")
+        if not ms:
+            return ""
+        m = ms[0]
+        if m["state"] == "escalated":
+            return (f"\n\nYour message from {_fmt_date(m['sent_on'])} wasn't answered by {_fmt_date(m['respond_by'])}, so it has gone to "
+                    f"**{m['escalated_to']}** (supervisor). You can also call them: {m['supervisor']['phone']}.")
+        if m["state"] == "waiting":
+            return f"\n\nYour latest message is with {m['worker']}. Reply due by {_fmt_date(m['respond_by'])}; after that it goes to their supervisor."
+        return ""
+
+    def _care_needs(self):
+        n = self.call("care_needs_get")
+        if not n.get("available"):
+            return n["note"]
+        return ("Here's what helps day to day (Source: " + n["source"] + ", updated " + _fmt_date(n["updated_on"]) + "):\n"
+                f"- **Routines:** {n['routines']}\n- **Health:** {n['health']}\n- **School:** {n['school']}\n"
+                f"- **What helps:** {n['comfort']}\n- **Go gently with:** {n['avoid']}")
+
+    def _money(self):
+        sp = self.call("supports_get")
+        if self.i.persona == "kin":
+            now = [x for x in sp["supports"] if not x["license"]]
+            later = [x for x in sp["supports"] if x["license"]]
+            return (f"**{sp['time_to_first_payment']}.** You don't have to wait for a license for these:\n" + "\n".join(
+                f"- **{x['name']}** ({x['status']}): {x['note']}" for x in now) +
+                "\n\nAfter approval:\n" + "\n".join(f"- **{x['name']}**: {x['note']}" for x in later) +
+                "\n\n(Source: your agency's support list.) Want me to ask Maya to start the cash grant application with you?")
+        pend = "".join(f"\n- Pending: {x['item']}, submitted {_fmt_date(x['submitted_on'])} ({x['days']} days ago, usually {x['typical'][0]} to {x['typical'][1]} days)"
+                       for x in sp["pending_reimbursements"])
+        return (f"**Monthly payment:** {sp['monthly']}. Last paid {_fmt_date(sp['last_paid_on'])}, next due {_fmt_date(sp['next_payment_on'])}.{pend}\n\n"
+                "Other supports:\n" + "\n".join(f"- **{x['name']}** ({x['status']}): {x['note']}" for x in sp["supports"] if x["name"] != "Monthly foster care payment") +
+                "\n\nIf a payment is late or wrong, call the caregiver payments unit (555-0140).")
+
+    def _steps(self, items, title):
+        def line(x):
+            t = x.get("typical")
+            rng = f", usually {t[0]} to {t[1]} days" if t and t[0] != t[1] else (f", usually about {t[0]} days" if t else "")
+            age = f" since {_fmt_date(x['since_on'])}" if x["status"] not in ("done", "reused") and x["days"] else ""
+            flag = " **Past its usual time: flagged to the supervisor.**" if x["stalled"] else ""
+            return f"- **{x['item']}**: {x['status']}{age}. Who has it: {x['holder']}{rng}.{flag}" + (f" {x['note']}" if x.get("note") else "")
+        return title + "\n" + "\n".join(line(x) for x in items)
+
+    # --- kin -------------------------------------------------------------------------------------------
     def _kin(self, t, raw):
         has = lambda *w: any(x in t for x in w)
         if self.g["injection"] or has("other famil", "other kids", "other children", "all cases"):
             return "I can only help with the child in your care. For anything else, your caseworker is the right person to ask."
+        if has("who do i call", "who to call", "goes wrong", "supervisor", "no one", "nobody", "not answering", "no reply", "escalat",
+               "behavior", "behaviour", "tantrum", "legal", "lawyer", "after hours", "weekend", "emergency"):
+            focus = (["Behavior support", "After-hours line", "Emergency", "Your worker"] if has("behavior", "behaviour", "tantrum") else
+                     ["Legal questions", "Your worker"] if has("legal", "lawyer") else None)
+            return self._contacts(focus) + self._messages()
+        if has("money", "pay", "financial", "help with", "help can i get", "right now", "clothes", "afford", "benefit", "support",
+               "dinero", "ayuda", "grant", "voucher"):
+            return self._money()
+        if has("how long", "taking so long", "where is my", "up to", "status", "my approval", "license", "licence", "background check",
+               "home study", "stuck"):
+            a = self.call("approval_status_get")
+            return (self._steps(a["items"], f"**Day {a['day']}** since {self.call('child_details_get')['first']} came to you. "
+                                            f"Your agency aims to finish approval in {a['agency_target_days']} days; the national average is about "
+                                            f"{a['national_average_days']}. Steps run at the same time:") +
+                    "\n\n(Source: your approval checklist.) Money doesn't have to wait for this. Ask me what help you can get right now.")
+        if has("need", "routine", "sleep", "bed", "eat", "food she", "what helps", "calm", "comfort", "care for her", "care for him"):
+            if not has("money", "pay", "help can i get", "afford"):
+                return self._care_needs()
         if has("why", "what happened", "removed", "taken", "mom", "dad", "mother", "father", "parent", "mamá", "papá"):
             w = self.call("worker_contact_get")
             return (f"That's an important question, and it's one your caseworker should talk through with you in person, so you get the full picture. "
                     f"{w['name']} can explain what's happening and how contact with the parents will work. You can call {w['name']} at {w['phone']}, "
                     "or I can ask them to call you back.")
-        if has("money", "pay", "financial", "help with", "food", "clothes", "bed", "afford", "benefit", "support", "dinero", "ayuda"):
-            return self._program(raw + " financial help", "Here's the help relative caregivers can usually ask about:")
         if has("approved", "approval", "before", "keep", "can i care", "take them", "options", "decide", "say no", "say yes"):
             return self._program(raw, "Here's how it usually works:")
         if has("guardian", "adopt", "long term", "permanent", "forever"):
@@ -572,9 +666,38 @@ class Fallback:
                 parts.append(f"health: {c['medical']}")
             return "; ".join(parts) + ". (Source: child record, shared under your agency's rules for caregivers.)"
         if has("worker", "call", "contact", "talk", "phone", "reach"):
-            w = self.call("worker_contact_get")
-            return f"Your caseworker is {w['name']}. Phone: {w['phone']}. Email: {w['email']}. I can also ask them to call you back."
+            return self._contacts(["Your worker", "Their supervisor", "After-hours line"]) + self._messages()
         return self._program(raw, "Here's what I found:")
+
+    # --- licensed foster parent ------------------------------------------------------------------------
+    def _foster(self, t, raw):
+        has = lambda *w: any(x in t for x in w)
+        if self.g["injection"] or has("other famil", "other kids", "other children", "all cases"):
+            return "I can only help with the child in your care. For anything else, your caseworker is the right person to ask."
+        if has("behavior", "behaviour", "tantrum", "hitting", "biting", "won't sleep", "melt"):
+            return ("You don't have to handle this alone.\n\n" + self._contacts(["Behavior support", "After-hours line", "Emergency", "Your worker"]) +
+                    "\n\n" + self._program("child behavior hard to manage", "From the agency guide:").split("\n\nWhat to ask")[0])
+        if has("legal", "lawyer", "rights", "court notice", "attorney"):
+            return self._contacts(["Legal questions", "Your worker"]) + "\n\nI can explain how things usually work, but I don't give legal advice."
+        if has("who do i call", "who to call", "supervisor", "no one", "nobody", "not answering", "no reply", "escalat", "after hours", "weekend", "emergency"):
+            return self._contacts() + self._messages()
+        if has("adopt", "finaliz", "termination", "parental rights", "tpr", "assistance agreement", "subsidy", "appeal"):
+            a = self.call("adoption_status_get")
+            return self._steps(a["steps"], "Where the adoption is up to (Source: case record):") + f"\n\n{a['context']} {a['note']}"
+        if has("pay", "money", "reimburs", "stipend", "mileage", "late", "respite", "support", "benefit"):
+            return self._money()
+        if has("need", "routine", "nap", "sleep", "eat", "bottle", "what helps", "calm", "settle"):
+            return self._care_needs()
+        if has("message", "reply", "heard back", "hear back"):
+            return (self._messages() or "No messages yet.").strip()
+        if has("why", "what happened", "removed", "parent", "mom", "dad"):
+            w = self.call("worker_contact_get")
+            return f"That's for {w['name']} to talk through with you, so you get the full picture. You can call them at {w['phone']}."
+        if has("when", "schedule", "court", "visit", "appointment", "coming up", "next", "hearing", "date"):
+            items = self.call("child_schedule_get")
+            return "Here's what's coming up (Source: court calendar and visit schedule):\n" + "\n".join(
+                f"- {_fmt_date(x['date']) if x['date'][0].isdigit() else x['date']}: {x['what']}" for x in items)
+        return self._program(raw, "Here's what the agency guide says:")
 
     def _program(self, q, lead):
         hits = self.call("program_search", {"query": q})
@@ -589,11 +712,17 @@ class Fallback:
     # --- applicant ----------------------------------------------------------------------------------
     def _applicant(self, t, raw):
         has = lambda *w: any(x in t for x in w)
-        if has("missing", "left", "outstanding", "checklist", "need to do", "still need", "next"):
+        if has("not hearing", "no one", "nobody", "no reply", "not answering", "escalat", "supervisor", "who do i contact",
+               "who do i call", "who to call", "ignored"):
+            return self._contacts(["Your worker", "Their supervisor", "Peer mentor"]) + self._messages()
+        if has("pay", "money", "reimburs", "stipend", "cost", "afford", "benefit"):
+            return self._program("foster care payments reimbursement monthly", "How payments work once a child is placed with you:")
+        if has("missing", "left", "outstanding", "checklist", "need to do", "still need", "next", "who has", "taking so long", "stuck"):
             items = [i for i in self.call("checklist_get") if i["status"] != "done"]
-            return "Here's what's left (Source: your checklist):\n" + "\n".join(
-                f"- {i['item']}: {i['status']}" + (f" ({i['note']})" if i.get("note") else "") for i in items) + \
-                "\n\nThe medical statement is the one that's missing. Your doctor can fill in the agency form."
+            return "Here's what's left, and who has each item (Source: your checklist):\n" + "\n".join(
+                f"- **{i['item']}**: {i['status']}. Who has it: {i.get('holder', 'agency')}" +
+                (f", for {i['since']} days (usually {i['typical'][0]} to {i['typical'][1]})" if i.get("typical") else "") +
+                (" **Past its usual time.**" if i.get("typical") and i["since"] > i["typical"][1] else "") for i in items) + self._messages()
         if has("how long", "timeline", "when will", "status", "where am i", "wait"):
             a = self.call("application_get")
             done = sum(s["status"] == "done" for s in a["application"]["steps"])

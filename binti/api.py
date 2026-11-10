@@ -28,7 +28,7 @@ class HTTPError(Exception):
 
 def ident_of(req):
     persona = req["headers"].get("x-persona") or "caseworker"
-    user = req["headers"].get("x-user") or {"caseworker": "cw1", "kin": "kin1", "applicant": "ap1"}.get(persona, "")
+    user = req["headers"].get("x-user") or {"caseworker": "cw1", "kin": "kin1", "applicant": "ap1", "foster": "fp1"}.get(persona, "")
     return gateway.Identity.resolve(persona, user)
 
 
@@ -47,6 +47,8 @@ def people(req):
         "kin": [{"id": k["id"], "name": k["name"], "caring_for": k["first"]} for k in db.rows(
             "SELECT k.id, k.name, c.first FROM kin_users k JOIN children c ON c.id=k.child_id")],
         "applicant": [{"id": a["id"], "name": a["household"]} for a in db.rows("SELECT id, household FROM applicants")],
+        "foster": [{"id": f["id"], "name": f["household"], "caring_for": f["first"]} for f in db.rows(
+            "SELECT f.id, f.household, c.first FROM foster_users f JOIN children c ON c.id=f.child_id")],
     }
 
 
@@ -55,7 +57,7 @@ def cases(req):
     ident = ident_of(req)
     if ident.persona == "caseworker":
         return {"cases": [stages.list_row(ident, c["case_id"]) for c in gateway.call(ident, "cases_list_assigned")]}
-    if ident.persona == "kin":
+    if ident.persona in gateway.CAREGIVERS:
         ch = gateway.call(ident, "child_details_get")
         return {"cases": [{"case_id": sorted(ident.case_ids)[0], "child": ch["name"], "avatar_svg": ch.get("avatar_svg"), "age": ch["age"]}]}
     return {"cases": []}
@@ -64,12 +66,19 @@ def cases(req):
 @route("GET", r"/api/cases/(?P<case_id>[\w-]+)")
 def case_detail(req, case_id):
     ident = ident_of(req)
-    if ident.persona == "kin":
+    if ident.persona in gateway.CAREGIVERS:
         if case_id not in ident.case_ids:
             raise gateway.GatewayError("forbidden", "You can only see the child in your care.")
-        return {"view": "kin", "child": gateway.call(ident, "child_details_get"),
-                "schedule": gateway.call(ident, "child_schedule_get"), "worker": gateway.call(ident, "worker_contact_get"),
-                "hidden_note": "Some details are shared by the caseworker in person, under your agency's rules for caregivers."}
+        g = lambda t: gateway.call(ident, t)
+        out = {"view": ident.persona, "child": g("child_details_get"), "schedule": g("child_schedule_get"),
+               "worker": g("worker_contact_get"), "care_needs": g("care_needs_get"), "contacts": g("contacts_get"),
+               "supports": g("supports_get"), "messages": g("messages_get"),
+               "hidden_note": "Some details, such as why the child came into care, are shared by the caseworker in person, under your agency's rules for caregivers."}
+        if ident.persona == "kin":
+            out["approval"] = g("approval_status_get")
+        else:
+            out["adoption"] = g("adoption_status_get")
+        return out
     if ident.persona != "caseworker":
         raise gateway.GatewayError("forbidden", "Case pages are for caseworkers and the child's caregiver.")
     g = lambda t: gateway.call(ident, t, {"case_id": case_id})
@@ -80,7 +89,8 @@ def case_detail(req, case_id):
     return {"view": "caseworker", "case": g("case_get"), "relationships": g("relationships_list"), "placements": g("placements_list"),
             "history": g("history_list"), "tasks": g("tasks_list"), "court": g("court_dates_list"), "visits": g("visits_list"),
             "referrals": g("referrals_list"), "plan": g("plan_get"), "proposals": props,
-            "stage": stages.stage(stages.bundle(ident, case_id)), "flags": stages.list_row(ident, case_id)["flags"]}
+            "stage": stages.stage(stages.bundle(ident, case_id)), "flags": stages.list_row(ident, case_id)["flags"],
+            "care_needs": db.row("SELECT * FROM care_needs WHERE child_id=?", (g("case_get")["child"]["child_id"],))}
 
 
 @route("GET", "/api/briefing")
@@ -126,6 +136,28 @@ def wf_language(req):
     return workflows.language_check(req["json"].get("text", "")[:8000])
 
 
+@route("POST", "/api/workflows/court-report")
+def wf_court_report(req):
+    b = req["json"]
+    return workflows.court_report(ident_of(req), b["case_id"], b["hearing_date"])
+
+
+@route("POST", "/api/messages")
+def send_message(req):
+    ident = ident_of(req)
+    out = gateway.call(ident, "message_worker", {"text": str(req["json"].get("text", ""))[:2000]})
+    out["messages"] = gateway.call(ident, "messages_get")
+    return out
+
+
+@route("GET", "/api/workload")
+def workload(req):
+    ident = ident_of(req)
+    if ident.persona != "caseworker":
+        raise gateway.GatewayError("forbidden", "Workload view is for caseworkers.")
+    return workflows.caseworker_workload(ident)
+
+
 @route("POST", "/api/workflows/first-contact")
 def wf_first_contact(req):
     b = req["json"]
@@ -148,6 +180,7 @@ def wf_app_help(req):
 def application(req):
     ident = ident_of(req)
     return {"application": gateway.call(ident, "application_get"), "checklist": gateway.call(ident, "checklist_get"),
+            "contacts": gateway.call(ident, "contacts_get"), "messages": gateway.call(ident, "messages_get"),
             "pending": [dict(p, payload=json.loads(p["payload"])) for p in db.rows(
                 "SELECT id, kind, payload, summary, status FROM proposals WHERE object_type='application' AND object_id=? AND status='pending'",
                 (ident.applicant_id,))]}

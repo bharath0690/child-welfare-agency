@@ -3,7 +3,7 @@ name: child-schedule-lookup
 description: Tell a kin caregiver what is coming up for the child in their care (court, visits, school) and share the details the agency allows. Use for 'when is…', schedule, school or health questions from a caregiver.
 allowed-tools: child_schedule_get, child_details_get, worker_contact_get, message_worker
 metadata:
-  persona: kin
+  persona: kin, foster
   kind: agent
   phase: 1
   feature: Child details and schedule lookup

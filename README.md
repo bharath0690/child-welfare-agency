@@ -1,11 +1,11 @@
 # Binti AI journeys (prototype)
 
-A working prototype of AI-assisted child welfare journeys for a **caseworker**, a **prospective foster or adoptive parent** and a **kin caregiver**. All names, cases and data are fictional. Children are shown as illustrated avatars, never photos. It is not an official Binti product.
+A working prototype of AI-assisted child welfare journeys for a **caseworker**, a **prospective foster or adoptive parent**, a **kin caregiver** and a **licensed foster parent**. All names, cases and data are fictional. Children are shown as illustrated avatars, never photos. It is not an official Binti product.
 
 - **Binti AI home** (default landing for caseworkers): a full-screen chat over the whole caseload. "Your day" cards are color-coded by urgency (red urgent, amber soon, blue routine). Tap a card to ask about it, or ask anything about any child. Answers name the child and link to their case. The sidebar holds My cases.
 - **My cases** (sidebar): the case list. It has a case list with filters, a "Your day" briefing, and case and child pages. **Ask Binti AI** reads the current case, names its stage and suggests next actions you can pin and reorder, then lets you ask about the case. Use **Full screen** in the panel header for a two-column view, with actions on the left and a wide chat on the right. The chat box grows as you type: Enter sends, and Shift+Enter adds a new line.
 - **Journey study** (top menu): the original 21-screen concept walkthrough from the persona canvas (`canvas/index.html`).
-- **Viewing as** (top left): stands in for sign-in. Choose one of three caseworkers, a kin caregiver or an applicant family. A one-time tip points it out on first load.
+- **Viewing as** (top left): stands in for sign-in. Choose one of three caseworkers, a kin caregiver, a licensed foster family or an applicant family. A one-time tip points it out on first load.
 - **Workspace** (top left, next to Viewing as): every Binti AI chat for every persona, saved in this browser only. Switching personas or reloading keeps each persona's history. Nothing is shared with other viewers, because the server doesn't store chats in workspace mode.
 - **Internal use** (top right): the three Journey study walkthroughs and the AI quality drawer. These are internal, not part of the end-user product.
 
@@ -22,7 +22,7 @@ python3 dev.py --reseed   # rebuild the SQLite database from binti/seed.py
 python3 -m unittest discover -s tests -v
 ```
 ```bash
-python3 evals/run_evals.py      # 25-case golden eval set (see evals/README.md)
+python3 evals/run_evals.py      # 29-case golden eval set (see evals/README.md)
 ```
 You need Python 3.10 or later. There's nothing to install: the backend uses only the standard library.
 
@@ -49,7 +49,7 @@ index.html, app.js, screens-*.js   journey walkthrough (unchanged)
 cases.js, cases.css                case list, case page, application, Binti AI panel
 api/index.py                       Vercel entry point -> binti/api.py (WSGI, no framework)
 binti/
-  seed.py        schema + fictional data (12 children, 3 caseworkers, kin caregiver, applicant)
+  seed.py        schema + fictional data (12 children, 3 caseworkers, 2 supervisors, kin caregiver, foster family, applicant)
   gateway.py     tool gateway: persona allowlist, schema checks, scope, disclosure matrix, audit, proposals
   stages.py      case stage + next-action rules (explainable, tested)
   agent.py       persona runtime: AGENTS.md profile + skills + DeepSeek tool loop + scripted fallback
@@ -57,10 +57,10 @@ binti/
   guardrails.py  safety disclosure, prompt injection, emotional cues, decision/legal-advice output checks, fault language
   llm.py         model gateway (DeepSeek, OpenAI-compatible)
   skills.py      loads skills/<name>/SKILL.md
-AGENTS.md                          core agent + three persona profiles (tone, emotional states, tools)
-skills/<name>/SKILL.md             14 skills (Agent Skills format) with their allowed tools
+AGENTS.md                          core agent + four persona profiles (tone, emotional states, tools)
+skills/<name>/SKILL.md             18 skills (Agent Skills format) with their allowed tools
 tests/test_backend.py              permissions, disclosure, stages, guardrails, workflows, live tool loop (fake server)
-evals/golden.json, run_evals.py    25-case golden eval set and runner (release gate on critical cases)
+evals/golden.json, run_evals.py    29-case golden eval set and runner (release gate on critical cases)
 ```
 
 ### Why a plain Python WSGI app over SQLite
@@ -75,11 +75,13 @@ evals/golden.json, run_evals.py    25-case golden eval set and runner (release g
 | `GET /api/health` | Mode (live or scripted), model and seed date |
 | `GET /api/people` | Options for the "Viewing as" switcher |
 | `GET /api/cases` | Case list rows: child, age, stage, next due, flags, last visit |
-| `GET /api/cases/{id}` | Case page (caseworker), or the kin view filtered by the disclosure matrix |
+| `GET /api/cases/{id}` | Case page (caseworker), or the kin or foster view filtered by the disclosure matrix |
 | `GET /api/briefing` | Start-of-day briefing |
 | `POST /api/ai/open` | Opens Binti AI on the current object: stage, next actions, saved chat, memory |
 | `POST /api/ai/chat` | Sends a message to the persona agent |
 | `POST /api/cases/{id}/actions/{aid}` | `pin`, `unpin`, `up`, `down`, `done` or `dismiss` a suggested action |
-| `POST /api/workflows/{visit-note,prefill,language-check,first-contact,inquiry-triage,application-help}` | Runs a workflow; writes become proposals |
+| `GET /api/workload` | Caseworker workload strip and supervisor recognition |
+| `POST /api/messages` | A family message to their worker, with a reply deadline and supervisor escalation |
+| `POST /api/workflows/{visit-note,prefill,language-check,court-report,first-contact,inquiry-triage,application-help}` | Runs a workflow; writes become proposals |
 | `POST /api/proposals/{id}` | A person approves (and may edit) or rejects an AI draft |
 | `GET /api/audit?case_id=` | Gateway audit log for a case |

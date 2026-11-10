@@ -87,10 +87,10 @@ def actions(b):
             f"Visit log, last {last}", 90 if overdue > 0 else 60)
     for h in b["court"]:
         n = _days(h["on_date"])
-        if 0 <= n <= 14 and h["report_status"] != "submitted":
+        if 0 <= n <= 14 and h["report_status"] not in ("submitted", "ready to file"):
             add(f"court-{h['on_date']}", f"Prepare the court report for the {h['hearing'].lower()}",
-                f"Hearing in {n} days. Report status: {h['report_status']}. Court report assembly (cited facts, your recommendation) is a Phase 2 feature.",
-                f"Court calendar {h['on_date']}", 95 - n, h["on_date"])
+                f"Hearing in {n} days. Report status: {h['report_status']}. Binti AI can assemble the cited facts; you write the recommendation.",
+                f"Court calendar {h['on_date']}", 95 - n, h["on_date"], "court-report-assembly", f"court-report:{h['on_date']}")
     court_action = any(a["key"].startswith("court-") for a in out)
     for t in b["tasks"]:
         if t["status"] != "open" or (court_action and t["kind"] == "court"):

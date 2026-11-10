@@ -16,7 +16,8 @@ from datetime import date, datetime, timedelta
 from . import db
 from .avatars import svg
 
-PERSONAS = ("caseworker", "applicant", "kin")
+PERSONAS = ("caseworker", "applicant", "kin", "foster")
+CAREGIVERS = ("kin", "foster")
 
 
 class GatewayError(Exception):
@@ -50,6 +51,12 @@ class Identity:
                 raise GatewayError("unknown_user", "Unknown kin caregiver")
             ids = {r["id"] for r in db.rows("SELECT id FROM cases WHERE child_id=?", (k["child_id"],))}
             return cls(persona, user_id, k["name"], ids, child_id=k["child_id"])
+        if persona == "foster":
+            f = db.row("SELECT * FROM foster_users WHERE id=?", (user_id,))
+            if not f:
+                raise GatewayError("unknown_user", "Unknown foster parent")
+            ids = {r["id"] for r in db.rows("SELECT id FROM cases WHERE child_id=?", (f["child_id"],))}
+            return cls(persona, user_id, f["name"], ids, child_id=f["child_id"])
         a = db.row("SELECT * FROM applicants WHERE id=?", (user_id,))
         if not a:
             raise GatewayError("unknown_user", "Unknown applicant")
@@ -242,7 +249,7 @@ def t_memory_note(ident, a):
 
 
 def _own_object(ident):
-    if ident.persona == "kin":
+    if ident.persona in CAREGIVERS:
         return ("case", _kin_case(ident)["id"])
     return ("application", ident.applicant_id)
 
@@ -261,7 +268,7 @@ def _propose(ident, obj_type, obj_id, kind, payload, summary):
 
 
 def approver(kind):
-    return {"note": "Caseworker review and signature", "form": "Caseworker review", "task": "Caseworker approval",
+    return {"note": "Caseworker review and signature", "court_report": "Caseworker writes the recommendation and signs", "form": "Caseworker review", "task": "Caseworker approval",
             "outreach": "Caseworker review (bilingual check if translated)", "application_field": "Family submits",
             "message": "Delivered to the caseworker", "callback": "Delivered to the caseworker"}.get(kind, "Human review")
 
@@ -327,7 +334,8 @@ def t_program_search(ident, a):
     The vector half of hybrid RAG is a later step; see docs/ai-architecture.md section 9."""
     import math
     import re
-    aud = {"caseworker": ("applicant", "kin", "all"), "applicant": ("applicant", "all"), "kin": ("kin", "all")}[ident.persona]
+    aud = {"caseworker": ("applicant", "kin", "foster", "all"), "applicant": ("applicant", "all"), "kin": ("kin", "all"),
+           "foster": ("foster", "applicant", "all")}[ident.persona]
     docs = db.rows(f"SELECT id, title, body, source FROM program_docs WHERE audience IN ({','.join('?' * len(aud))})", aud)
     tok = lambda s: re.findall(r"[a-z]+", s.lower())
     stop = {"the", "a", "an", "and", "or", "to", "of", "in", "is", "i", "my", "me", "for", "can", "do", "what", "how",
@@ -371,19 +379,160 @@ def t_child_schedule_get(ident, a):
     items = [{"date": x["on_date"], "what": f"Court: {x['hearing']}", "source": "Court calendar"} for x in court]
     items.append({"date": nxt, "what": "Caseworker home visit (to confirm with your worker)", "source": "Visit schedule"})
     ch = db.row("SELECT school FROM children WHERE id=?", (c["child_id"],))
-    items.append({"date": "Weekdays", "what": f"School: {ch['school']}", "source": "Child record"})
+    if not ch["school"].lower().startswith("not in school"):
+        items.append({"date": "Weekdays", "what": f"School: {ch['school']}", "source": "Child record"})
     return sorted(items, key=lambda x: x["date"])
 
 
 def t_worker_contact_get(ident, a):
-    c = _kin_case(ident) if ident.persona == "kin" else None
+    c = _kin_case(ident) if ident.persona in CAREGIVERS else None
     wid = c["worker_id"] if c else db.row("SELECT worker_id FROM applicants WHERE id=?", (ident.applicant_id,))["worker_id"]
     return db.row("SELECT name, role, phone, email FROM workers WHERE id=?", (wid,))
 
 
+def _owner(ident):
+    return (ident.persona, ident.user_id)
+
+
+def _worker_for(ident):
+    if ident.persona in CAREGIVERS:
+        return _kin_case(ident)["worker_id"]
+    if ident.persona == "applicant":
+        return db.row("SELECT worker_id FROM applicants WHERE id=?", (ident.applicant_id,))["worker_id"]
+    return None
+
+
+def add_business_days(start, n):
+    d = start
+    while n > 0:
+        d += timedelta(days=1)
+        if d.weekday() < 5:
+            n -= 1
+    return d
+
+
+def messages_with_clock(owner_type, owner_id):
+    """Messages to the worker with their response deadline. Unanswered past the deadline -> escalated to the supervisor."""
+    days = int((db.row("SELECT v FROM agency_settings WHERE k='message_response_business_days'") or {"v": "2"})["v"])
+    out = []
+    for m in db.rows("SELECT * FROM worker_messages WHERE owner_type=? AND owner_id=? ORDER BY sent_at DESC", (owner_type, owner_id)):
+        w = db.row("SELECT name, phone, supervisor_id FROM workers WHERE id=?", (m["worker_id"],))
+        sup = db.row("SELECT name, phone FROM workers WHERE id=?", (w["supervisor_id"],)) if w and w["supervisor_id"] else None
+        sent = datetime.fromisoformat(m["sent_at"])
+        due = add_business_days(sent.date(), days)
+        if m["answered_at"]:
+            state = "answered"
+        elif date.today() > due:
+            state = "escalated"
+            if not m["escalated_to"] and sup:
+                db.execute("UPDATE worker_messages SET escalated_to=?, escalated_at=? WHERE id=?",
+                           (sup["name"], due.isoformat(), m["id"]))
+                m["escalated_to"], m["escalated_at"] = sup["name"], due.isoformat()
+        else:
+            state = "waiting"
+        out.append({"id": m["id"], "text": m["text"], "sent_on": m["sent_at"][:10], "worker": w["name"] if w else None,
+                    "respond_by": due.isoformat(), "state": state, "answer": m["answer"],
+                    "escalated_to": m["escalated_to"] or (sup["name"] if state == "escalated" and sup else None),
+                    "supervisor": sup})
+    return out
+
+
 def t_message_worker(ident, a):
-    obj = _own_object(ident)
-    return _propose(ident, obj[0], obj[1], "message", {"from": ident.name, "text": a["text"]}, f"Message from {ident.name}")
+    wid = _worker_for(ident)
+    key = "msg:" + hashlib.sha256(json.dumps([ident.persona, ident.user_id, a["text"]]).encode()).hexdigest()[:16]
+    if not db.row("SELECT id FROM worker_messages WHERE idem_key=?", (key,)):
+        db.execute("INSERT INTO worker_messages (idem_key, owner_type, owner_id, from_name, worker_id, text, sent_at) VALUES (?,?,?,?,?,?,?)",
+                   (key, ident.persona, ident.user_id, ident.name, wid, a["text"][:2000], _now()))
+    m = messages_with_clock(ident.persona, ident.user_id)[0]
+    return {"sent": True, "to": m["worker"], "respond_by": m["respond_by"],
+            "if_no_reply": f"If there's no reply by {m['respond_by']}, it goes to {m['supervisor']['name']} automatically." if m["supervisor"] else ""}
+
+
+def t_messages_get(ident, a):
+    return messages_with_clock(ident.persona, ident.user_id)
+
+
+def t_contacts_get(ident, a):
+    """Who to call for what: named worker, their supervisor, then agency lines for this audience."""
+    out = []
+    wid = _worker_for(ident)
+    w = db.row("SELECT name, role, phone, email, supervisor_id FROM workers WHERE id=?", (wid,))
+    if w:
+        out.append({"role": "Your worker", "name": w["name"] + " (" + w["role"] + ")", "phone": w["phone"], "hours": "Weekdays",
+                    "use_for": "Day-to-day questions about the child or your application."})
+        sup = db.row("SELECT name, role, phone FROM workers WHERE id=?", (w["supervisor_id"],)) if w["supervisor_id"] else None
+        if sup:
+            out.append({"role": "Their supervisor", "name": sup["name"] + " (" + sup["role"] + ")", "phone": sup["phone"], "hours": "Weekdays",
+                        "use_for": "No reply within 2 business days, or a concern about how things are going with your worker."})
+    for c in db.rows("SELECT * FROM agency_contacts ORDER BY sort"):
+        if ident.persona in c["audience"].split(","):
+            out.append({"role": c["role"], "name": c["name"], "phone": c["phone"], "hours": c["hours"], "use_for": c["use_for"]})
+    return out
+
+
+def t_care_needs_get(ident, a):
+    c = _kin_case(ident)
+    if "care_needs" not in allowed_fields(ident.persona):
+        return {"available": False, "note": "Your agency hasn't turned on sharing of care needs. Ask your caseworker."}
+    n = db.row("SELECT * FROM care_needs WHERE child_id=?", (c["child_id"],))
+    if not n:
+        return {"available": False, "note": "Your caseworker hasn't written these yet. Ask them what the child needs day to day."}
+    return {"available": True, "routines": n["routines"], "health": n["health"], "school": n["school"], "comfort": n["comfort"],
+            "avoid": n["avoid"], "updated_on": n["updated_on"], "source": n["source"]}
+
+
+def _with_age(items, start=None):
+    out = []
+    for it in items:
+        x = dict(it)
+        since = x.get("since", 0)
+        x["since_on"] = (date.today() - timedelta(days=since)).isoformat()
+        x["days"] = since
+        t = x.get("typical")
+        x["stalled"] = bool(t) and x["status"] not in ("done", "reused", "active") and since > t[1]
+        out.append(x)
+    return out
+
+
+def t_approval_status_get(ident, a):
+    k = db.row("SELECT * FROM kin_users WHERE id=?", (ident.user_id,))
+    target = int((db.row("SELECT v FROM agency_settings WHERE k='kin_license_target_days'") or {"v": "90"})["v"])
+    day = _days_since(k["placed_on"])
+    return {"placed_on": k["placed_on"], "day": day, "agency_target_days": target, "national_average_days": 160,
+            "items": _with_age(json.loads(k["approval"])),
+            "note": "Steps run in parallel. Anything past its usual time is flagged to the supervisor."}
+
+
+def t_supports_get(ident, a):
+    if ident.persona == "kin":
+        k = db.row("SELECT * FROM kin_users WHERE id=?", (ident.user_id,))
+        day = _days_since(k["placed_on"])
+        return {"supports": json.loads(k["supports"]), "first_payment_on": k["first_payment_on"],
+                "time_to_first_payment": (f"Paid on {k['first_payment_on']}" if k["first_payment_on"]
+                                          else f"Day {day} since placement, no payment yet"),
+                "now_without_license": [s["name"] for s in json.loads(k["supports"]) if not s["license"] and s["status"] != "active"]}
+    f = db.row("SELECT * FROM foster_users WHERE id=?", (ident.user_id,))
+    pay = json.loads(f["payments"])
+    pend = [dict(x, submitted_on=(date.today() + timedelta(days=x["submitted"])).isoformat(), days=-x["submitted"]) for x in pay["pending"]]
+    return {"supports": json.loads(f["supports"]), "monthly": pay["monthly"],
+            "last_paid_on": (date.today() + timedelta(days=pay["last_paid"])).isoformat(),
+            "next_payment_on": (date.today() + timedelta(days=pay["next_due"])).isoformat(), "pending_reimbursements": pend}
+
+
+def t_adoption_status_get(ident, a):
+    f = db.row("SELECT * FROM foster_users WHERE id=?", (ident.user_id,))
+    return {"steps": _with_age(json.loads(f["adoption"])),
+            "context": "Nationally, the median time from termination of parental rights to adoption was about 9 months (AFCARS, FY2012).",
+            "note": "Dates depend on the court. Your caseworker and the caregiver legal help line can explain each step."}
+
+
+def t_court_report_draft(ident, a):
+    _case(ident, a["case_id"])
+    h = db.row("SELECT on_date, hearing FROM court_dates WHERE case_id=? AND on_date=?", (a["case_id"], a["hearing_date"]))
+    if not h:
+        raise GatewayError("not_found", "No hearing on that date for this case.")
+    return _propose(ident, "case", a["case_id"], "court_report", {"hearing_date": h["on_date"], "hearing": h["hearing"], "body": a["body"]},
+                    f"Court report draft: {h['hearing']}, {h['on_date']}")
 
 
 def t_callback_request(ident, a):
@@ -428,17 +577,34 @@ TOOLS = {
     "outreach_draft": ("draft", ("caseworker",), "Draft a first-contact message to a relative for worker review.",
                        {**CASE, "relationship_id": I(), "language": S(), "body": S()},
                        ["case_id", "relationship_id", "language", "body"], t_outreach_draft),
-    "program_search": ("read", ("caseworker", "applicant", "kin"), "Search agency program content (licensing, kin options, supports). Returns cited passages.",
+    "program_search": ("read", ("caseworker", "applicant", "kin", "foster"), "Search agency program content (licensing, kin options, supports). Returns cited passages.",
                        {"query": S("The question in plain words")}, ["query"], t_program_search),
     "application_get": ("read", ("applicant",), "The family's own application and licensing worker.", {}, [], t_application_get),
     "checklist_get": ("read", ("applicant",), "The family's own requirements checklist.", {}, [], t_checklist_get),
     "application_field_draft": ("draft", ("applicant",), "Draft text for one application field. The family edits and submits.",
                                 {"field": S(), "value": S()}, ["field", "value"], t_application_field_draft),
-    "child_details_get": ("read", ("kin",), "Details about the child in your care that the agency allows you to see.", {}, [], t_child_details_get),
-    "child_schedule_get": ("read", ("kin",), "Upcoming court dates, visits and school for the child in your care.", {}, [], t_child_schedule_get),
-    "worker_contact_get": ("read", ("kin", "applicant"), "Name and contact details of your worker.", {}, [], t_worker_contact_get),
-    "message_worker": ("request", ("kin", "applicant"), "Send a message to your worker.", {"text": S()}, ["text"], t_message_worker),
-    "callback_request": ("request", ("kin", "applicant"), "Ask your worker to call you back.", {"reason": S()}, ["reason"], t_callback_request),
+    "child_details_get": ("read", CAREGIVERS, "Details about the child in your care that the agency allows you to see.", {}, [], t_child_details_get),
+    "child_schedule_get": ("read", CAREGIVERS, "Upcoming court dates, visits and school for the child in your care.", {}, [], t_child_schedule_get),
+    "worker_contact_get": ("read", ("kin", "foster", "applicant"), "Name and contact details of your worker.", {}, [], t_worker_contact_get),
+    "message_worker": ("request", ("kin", "foster", "applicant"),
+                       "Send a message to your worker. It has a reply deadline and goes to their supervisor if unanswered.",
+                       {"text": S()}, ["text"], t_message_worker),
+    "messages_get": ("read", ("kin", "foster", "applicant"), "Your messages to your worker, with reply deadlines and escalation status.",
+                     {}, [], t_messages_get),
+    "contacts_get": ("read", ("kin", "foster", "applicant"),
+                     "Who to call for what: your worker, their supervisor, after-hours, behavior support, legal help, payments.",
+                     {}, [], t_contacts_get),
+    "care_needs_get": ("read", CAREGIVERS, "What the child in your care needs day to day: routines, health, school, what helps.",
+                       {}, [], t_care_needs_get),
+    "approval_status_get": ("read", ("kin",), "Your approval steps: who holds each one, since when, and how long it usually takes.",
+                            {}, [], t_approval_status_get),
+    "supports_get": ("read", CAREGIVERS, "Money and supports: what you can get now, payment status and pending reimbursements.",
+                     {}, [], t_supports_get),
+    "adoption_status_get": ("read", ("foster",), "Adoption steps for the child in your care: who holds each one and typical timing.",
+                            {}, [], t_adoption_status_get),
+    "court_report_draft": ("draft", ("caseworker",), "Create a court report DRAFT of cited facts. The worker writes the recommendation and signs.",
+                           {**CASE, "hearing_date": S("YYYY-MM-DD"), "body": S()}, ["case_id", "hearing_date", "body"], t_court_report_draft),
+    "callback_request": ("request", ("kin", "foster", "applicant"), "Ask your worker to call you back.", {"reason": S()}, ["reason"], t_callback_request),
 }
 
 
@@ -566,6 +732,10 @@ def _materialize(ident, p, payload):
                    (today, payload["relationship_id"]))
         db.execute("INSERT INTO history (case_id, on_date, kind, text) VALUES (?,?,?,?)",
                    (cid, today, "outreach", f"First-contact message sent to {payload['to']} ({payload['language']})."))
+    elif k == "court_report":
+        db.execute("UPDATE court_dates SET report_status='ready to file' WHERE case_id=? AND on_date=?", (cid, payload["hearing_date"]))
+        db.execute("INSERT INTO history (case_id, on_date, kind, text) VALUES (?,?,?,?)",
+                   (cid, today, "court", f"Court report for the {payload['hearing'].lower()} on {payload['hearing_date']} signed (facts drafted with Binti AI)."))
     elif k == "application_field":
         ap = db.row("SELECT application FROM applicants WHERE id=?", (cid,))
         data = json.loads(ap["application"])

@@ -338,3 +338,23 @@ table.bw-t { width: 100%; border-collapse: collapse; font-size: 14px; }
   .bw-prof .bw-btn.ai { width: 100%; justify-content: center; }
 }
 @media (max-width: 859px) { .bw-panel [data-bw='panel-full'] { display: none; } }
+
+/* caregiver and applicant: steps with who holds them, who to call, messages; caseworker workload strip */
+.bw-steplist li, .bw-who li { align-items: flex-start; }
+.bw-steplist li > div, .bw-who li > div { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.bw-phone { font-variant-numeric: tabular-nums; font-weight: 600; user-select: all; }
+.bw-answer { background: var(--bw-agent-bg); border: 1px solid var(--bw-agent-line); border-radius: 6px; padding: 4px 8px; margin-top: 4px; }
+.bw-msgform { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: end; margin-top: 10px; }
+.bw-msgform textarea { width: 100%; border: 1px solid var(--bw-line); border-radius: 8px; padding: 8px 10px; background: var(--bw-surface); color: var(--bw-ink); font: 14px/1.45 var(--font); resize: vertical; }
+.bw-msgform .hint { grid-column: 1 / -1; }
+.bw-wl { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
+.bw-wl .t { background: var(--bw-surface); border: 1px solid var(--bw-line); border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; }
+.bw-wl b { font-size: 20px; font-variant-numeric: tabular-nums; }
+.bw-wl span { font-size: 13px; }
+.bw-wl small { font-size: 11.5px; color: var(--bw-muted); }
+.bw-recog { display: flex; flex-direction: column; gap: 6px; background: var(--bw-ok-bg); color: var(--bw-ok-ink); border-radius: 8px; padding: 10px 12px; font-size: 13.5px; }
+@media (max-width: 720px) {
+  .hdr-left { min-width: 0; max-width: 100%; }
+  .hdr-left .bw-as { min-width: 0; }
+  .hdr-left .bw-as select { width: 100%; }
+}
