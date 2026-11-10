@@ -447,7 +447,7 @@ KIN_SUPPORTS = [
 FOSTER_PAYMENTS = {"monthly": "$812 a month for Isabella (fictional prototype rate)", "last_paid": -5, "next_due": 25,
                    "pending": [{"item": "Mileage to early intervention, October", "submitted": -12, "typical": [20, 30]}]}
 FOSTER_SUPPORTS = [
-    {"name": "Monthly foster care payment", "status": "active", "license": True, "note": "Paid on the 1st."},
+    {"name": "Monthly foster care payment", "status": "active", "license": True, "note": "Paid on the 5th of each month."},
     {"name": "Health coverage for Isabella", "status": "active", "license": False, "note": "Continues after adoption."},
     {"name": "Early intervention (physical therapy)", "status": "active", "license": False, "note": "Weekly, through Cedar Early Intervention."},
     {"name": "Respite care", "status": "available", "license": True, "note": "Up to two weekends a month. Book through Grace."},
@@ -485,7 +485,7 @@ CARE_NEEDS = {
              "Peanut allergy: epinephrine auto-injector must go to school with her. No regular medicines.",
              "Riverside Elementary, grade 1. Teacher: Ms. Alvarado. The school can keep her placement if she stays in the area.",
              "Speaks Spanish at home. Calms down with drawing and with Tía Lucia's dog.",
-             "Loud arguments upset her. Talk calmly about her mom's hospital stay; Maya will explain what to say.",
+             "Loud arguments upset her. If she asks about her mom, keep it short and calm; Maya will explain what to say.",
              -2, "Caseworker notes and initial visit"),
     "ch11": ("Two naps a day (about 9:30 and 1:30). Bottle before bed. Early riser.",
              "Born early. Weekly physical therapy through early intervention. Next pediatric check in three weeks.",
