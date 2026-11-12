@@ -12,7 +12,14 @@ from . import agent, db, gateway, llm, stages, workflows
 from . import observability as obs
 
 # POST paths logged to Braintrust as one trace each when BRAINTRUST_API_KEY is set (binti/observability.py)
-TRACED = ("/api/ai/", "/api/workflows/", "/api/messages", "/api/proposals/")
+# Opening the AI panel and page loads are not traced: they make no model call and only add noise.
+TRACED = {"/api/ai/chat": "chat", "/api/workflows/": "workflow", "/api/messages": "family_message",
+          "/api/proposals/": "draft_decision"}
+
+
+def _trace_kind(path):
+    return next((kind for prefix, kind in TRACED.items() if path.startswith(prefix)), None)
+
 
 ROUTES = []
 
@@ -257,8 +264,11 @@ def app(environ, start_response):
             hit = rx.match(path.rstrip("/") or "/")
             if hit and m == method:
                 req = {"headers": headers, "json": body, "query": query}
-                if m == "POST" and path.startswith(TRACED):
-                    with obs.request_trace(f"{m} {path}", headers.get("x-persona") or "caseworker", headers.get("x-user"), body) as rec:
+                kind = _trace_kind(path) if m == "POST" else None
+                if kind:
+                    persona = headers.get("x-persona") or "caseworker"
+                    name = {"chat": f"chat · {persona}", "workflow": "workflow · " + path.rsplit("/", 1)[-1]}.get(kind, kind.replace("_", " "))
+                    with obs.request_trace(name, persona, headers.get("x-user"), body, kind=kind) as rec:
                         out = fn(req, **hit.groupdict())
                         rec["output"] = out
                         if rec["trace_id"] and isinstance(out, dict):

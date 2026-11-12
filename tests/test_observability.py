@@ -93,6 +93,23 @@ class TestObservability(unittest.TestCase):
         # tool spans carry field names, never the values
         self.assertNotIn("Review hearing", json.dumps([s.logs for s in tools]))
 
+    def test_chat_trace_is_readable_and_tagged(self):
+        fake = self._fake()
+        call("POST", "/api/ai/chat", {"object_type": "case", "object_id": "case-01", "message": "When is court?", "workspace": {"x": 1}})
+        root = fake.spans[0]
+        log = root.logs[-1]
+        self.assertEqual(root.name, "chat · caseworker")
+        self.assertEqual(log["input"], {"message": "When is court?"})
+        self.assertEqual(list(log["output"]), ["reply"])
+        self.assertEqual(log["tags"], ["chat", "caseworker"])
+        self.assertEqual(log["metadata"]["object_id"], "case-01")
+
+    def test_page_loads_and_panel_open_make_no_traces(self):
+        fake = self._fake()
+        call("GET", "/api/application", persona="applicant", user="ap1")  # calls several gateway tools
+        call("POST", "/api/ai/open", {"object_type": "case", "object_id": "case-01"})
+        self.assertEqual(fake.spans, [])
+
     def test_safety_disclosure_is_redacted(self):
         fake = self._fake()
         msg = "She told me her mom's boyfriend hits her"
