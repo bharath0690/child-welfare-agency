@@ -107,5 +107,21 @@ class TestClaudeJudge(unittest.TestCase):
         self.assertIsNone(judges.judge("helpfulness", "kin", "q", "a"))
 
 
+class TestSavedScorers(unittest.TestCase):
+    """evals/braintrust_scorers.py: the scorers pushed to the Braintrust library use the same rubric."""
+
+    def test_two_llm_scorers_with_agents_md_rubric(self):
+        import braintrust_scorers as bs
+        names = [p.name for p in bs.project._publishable_prompts]
+        self.assertEqual(names, ["Helpfulness", "Politeness and empathy"])
+        msgs = bs.messages("politeness_empathy")
+        self.assertIn("acknowledge it in one short, sincere sentence", msgs[0]["content"])
+        for name in judges.PERSONA_NAME.values():
+            self.assertIn(f"- {name}:", msgs[0]["content"])
+        self.assertIn("{{metadata.persona}}", msgs[1]["content"])
+        self.assertIn("{{output}}", msgs[1]["content"])
+        self.assertEqual(bs.CHOICES["4"], 0.75)
+
+
 if __name__ == "__main__":
     unittest.main()

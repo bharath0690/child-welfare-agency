@@ -22,7 +22,15 @@ The runner exits with code 1 if any **critical** case fails, so it can serve as 
 | `helpfulness` | Answers what was asked, early, with the person's own facts, a next step for today and a named person when needed. Declining a decision the AI must not make still counts as helpful when it says who decides |
 | `politeness_empathy` | Courteous and in the persona's tone. Distress is acknowledged in one short sentence before the facts. Marks down stock phrases, over-apologizing, minimizing, blame, lecturing, jargon for families, and padding for caseworkers |
 
-The judge's rubric is read from the "Helpful and kind" section and the persona's **Tone** line in `AGENTS.md`. That is the same text the agent receives, so the instructions and the grading change together. Each grade is 1 to 5, shown in Braintrust as 0 to 1, with the judge's reason attached. The judge is Claude (`claude-opus-5-5` through the official `anthropic` SDK, with a JSON-schema structured output) when `ANTHROPIC_API_KEY` is set, otherwise DeepSeek with `JUDGE_API_KEY` or `DEEPSEEK_API_KEY`. `JUDGE_PROVIDER` forces one and `JUDGE_MODEL` changes the Claude model. Without a key, the judge scores are left blank. Install with `python3 -m pip install -r evals/requirements.txt`. They are tracked, not a release gate, until they have been checked against human grades.
+The judge's rubric is read from the "Helpful and kind" section and the persona's **Tone** line in `AGENTS.md`. That is the same text the agent receives, so the instructions and the grading change together. Each grade is 1 to 5, shown in Braintrust as 0 to 1, with the judge's reason attached. The judge is Claude (`claude-opus-5-5` through the official `anthropic` SDK, with a JSON-schema structured output) when `ANTHROPIC_API_KEY` is set, otherwise DeepSeek with `JUDGE_API_KEY` or `DEEPSEEK_API_KEY`. `JUDGE_PROVIDER` forces one and `JUDGE_MODEL` changes the Claude model. Without a key, the judge scores are left blank. Install with `python3 -m pip install -r evals/requirements.txt`.
+
+**Saved scorers in the Braintrust UI.** The scores above appear as columns in each experiment. To also have them under **Library → Scorers**, where they can grade production logs (online scoring) and playground runs, push them:
+
+```bash
+braintrust push evals/braintrust_scorers.py --if-exists replace
+```
+
+This creates two LLM scorers, "Helpfulness" and "Politeness and empathy", built from the same `AGENTS.md` rubric. Braintrust runs them with its own model access, so add an Anthropic key under Braintrust **Settings → AI providers**. Push again after editing `AGENTS.md`. They are tracked, not a release gate, until they have been checked against human grades.
 
 ## Evidence-based cases, by persona
 

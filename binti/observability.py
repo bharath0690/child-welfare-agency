@@ -61,7 +61,7 @@ def _clean(value):
 
 
 @contextlib.contextmanager
-def request_trace(name, persona, user, body):
+def request_trace(name, persona, user, body, kind=None):
     """Root span for one API request. Yields a dict; set rec["output"] (and optionally rec["metadata"])."""
     rec = {"output": None, "metadata": {}, "trace_id": None}
     logger = _get_logger()
@@ -85,13 +85,13 @@ def request_trace(name, persona, user, body):
                 error = e
                 raise
             finally:
-                _finish(span, rec, persona, user, body, started, error)
+                _finish(span, rec, persona, user, body, started, error, kind)
     finally:
         _trace.reset(token)
         flush()
 
 
-def _finish(span, rec, persona, user, body, started, error):
+def _finish(span, rec, persona, user, body, started, error, kind=None):
     try:
         out = rec.get("output") if isinstance(rec.get("output"), dict) else {"value": rec.get("output")}
         meta = (out or {}).get("meta") or {}
@@ -99,13 +99,20 @@ def _finish(span, rec, persona, user, body, started, error):
         inp.pop("workspace", None)  # browser-held chat history; already in earlier traces
         if meta.get("escalated"):
             inp["message"] = REDACTED
-        metadata = {"persona": persona, "user": user, "mode": meta.get("mode"), "tools": meta.get("tools"),
+        metadata = {"persona": persona, "user": user, "kind": kind, "mode": meta.get("mode"), "tools": meta.get("tools"),
                     "flags": meta.get("flags"), "escalated": bool(meta.get("escalated")), **rec.get("metadata", {})}
+        if kind == "chat":
+            # Keep the Input and Output columns readable: just the message and the reply. The rest goes to metadata.
+            metadata.update({"object_type": inp.get("object_type"), "object_id": inp.get("object_id"),
+                             "case_refs": meta.get("case_refs"), "emotions": meta.get("emotions")})
+            inp = {"message": inp.get("message")}
+            out = {"reply": out.get("reply")} if not error else out
         scores = {}
         if "flags" in meta:  # online signals for the chat path (architecture section 7)
             scores["guardrail_clean"] = 0 if any(f.startswith(("decision_", "legal_", "reading_level")) for f in meta["flags"]) else 1
         span.log(input=_clean(inp), output=_clean(out if not error else {"error": str(error)}),
                  metadata={k: v for k, v in metadata.items() if v is not None},
+                 tags=[t for t in (kind, persona) if t] or None,
                  metrics={"latency_ms": round((time.time() - started) * 1000)}, scores=scores or None)
     except Exception:  # noqa: BLE001
         pass
@@ -113,8 +120,10 @@ def _finish(span, rec, persona, user, body, started, error):
 
 @contextlib.contextmanager
 def child_span(name, span_type, input=None, metadata=None):
-    """Nested span under the current request. Yields a function to log the output."""
-    if _get_logger() is None:
+    """Nested span under the current request. Yields a function to log the output.
+
+    Only inside a traced request: a tool call from a page load would otherwise start its own top-level trace."""
+    if _get_logger() is None or current_trace_id() is None:
         yield lambda **kw: None
         return
     try:
