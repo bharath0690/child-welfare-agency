@@ -26,6 +26,7 @@
   /* ---------- browser workspace: every persona's chats and memories, kept in this browser only ---------- */
   var WS = load("bw.ws") || {};
   if (!WS.threads) WS = { v: 1, threads: {}, memories: {} };
+  if (!WS.cids) WS.cids = {};  /* one random id per chat thread: groups a conversation's turns in the logs */
   function who() { return B.as.persona + ":" + B.as.user; }
   function tkey(type, id) { return who() + ":" + type + ":" + (id || "-"); }
   function saveWS() {
@@ -35,9 +36,17 @@
       delete WS.threads[keys.shift()];
     }
   }
+  function convId(k) {
+    if (!WS.cids[k]) {
+      WS.cids[k] = "c-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10);
+      saveWS();
+    }
+    return WS.cids[k];
+  }
   function wsPayload(type, id) {
-    var t = WS.threads[tkey(type, id)];
-    return { thread: t ? t.msgs.slice(-40) : [], memories: WS.memories[who()] || {} };  /* memories never cross personas */
+    var k = tkey(type, id), t = WS.threads[k];
+    return { thread: t ? t.msgs.slice(-40) : [], memories: WS.memories[who()] || {},  /* memories never cross personas */
+             conversation_id: convId(k) };
   }
   function wsMsgs(type, id) { var t = WS.threads[tkey(type, id)]; return t ? t.msgs.slice() : []; }
   function personName() {

@@ -96,7 +96,8 @@ def _finish(span, rec, persona, user, body, started, error, kind=None):
         out = rec.get("output") if isinstance(rec.get("output"), dict) else {"value": rec.get("output")}
         meta = (out or {}).get("meta") or {}
         inp = dict(body or {})
-        inp.pop("workspace", None)  # browser-held chat history; already in earlier traces
+        ws = inp.pop("workspace", None)  # browser-held chat history; already in earlier traces
+        ws = ws if isinstance(ws, dict) else {}
         if meta.get("escalated"):
             inp["message"] = REDACTED
         metadata = {"persona": persona, "user": user, "kind": kind, "mode": meta.get("mode"), "tools": meta.get("tools"),
@@ -105,6 +106,12 @@ def _finish(span, rec, persona, user, body, started, error, kind=None):
             # Keep the Input and Output columns readable: just the message and the reply. The rest goes to metadata.
             metadata.update({"object_type": inp.get("object_type"), "object_id": inp.get("object_id"),
                              "case_refs": meta.get("case_refs"), "emotions": meta.get("emotions")})
+            # One conversation = one browser chat thread. Group or score by metadata.conversation_id in Braintrust.
+            cid = ws.get("conversation_id")
+            metadata["conversation_id"] = (cid[:64] if isinstance(cid, str) and cid else
+                                           f"{persona}:{user}:{inp.get('object_type')}:{inp.get('object_id') or '-'}")
+            thread = ws.get("thread") if isinstance(ws.get("thread"), list) else []
+            metadata["turn_number"] = 1 + sum(1 for m in thread if isinstance(m, dict) and m.get("role") == "user")
             inp = {"message": inp.get("message")}
             out = {"reply": out.get("reply")} if not error else out
         scores = {}

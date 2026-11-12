@@ -104,6 +104,19 @@ class TestObservability(unittest.TestCase):
         self.assertEqual(log["tags"], ["chat", "caseworker"])
         self.assertEqual(log["metadata"]["object_id"], "case-01")
 
+    def test_chat_turns_share_a_conversation_id(self):
+        fake = self._fake()
+        ws = {"conversation_id": "c-abc", "thread": []}
+        call("POST", "/api/ai/chat", {"object_type": "application", "message": "What's left?", "workspace": ws},
+             persona="applicant", user="ap1")
+        ws["thread"] = [{"role": "user", "content": "What's left?"}, {"role": "assistant", "content": "..."}]
+        call("POST", "/api/ai/chat", {"object_type": "application", "message": "Who do I call?", "workspace": ws},
+             persona="applicant", user="ap1")
+        roots = [s for s in fake.spans if s.parent is None]
+        metas = [r.logs[-1]["metadata"] for r in roots]
+        self.assertEqual([m["conversation_id"] for m in metas], ["c-abc", "c-abc"])
+        self.assertEqual([m["turn_number"] for m in metas], [1, 2])
+
     def test_page_loads_and_panel_open_make_no_traces(self):
         fake = self._fake()
         call("GET", "/api/application", persona="applicant", user="ap1")  # calls several gateway tools
