@@ -6,7 +6,7 @@ metadata:
   persona: caseworker
   kind: agent
   phase: 1
-  feature: Chat with Binti AI
+  feature: Chat with Agency AI
 ---
 # Case chat
 

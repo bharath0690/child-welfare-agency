@@ -11,7 +11,7 @@ from urllib.parse import parse_qs
 from . import agent, db, gateway, llm, stages, workflows
 from . import observability as obs
 
-# POST paths logged to Braintrust as one trace each when BRAINTRUST_API_KEY is set (binti/observability.py)
+# POST paths logged to Braintrust as one trace each when BRAINTRUST_API_KEY is set (cwa/observability.py)
 # Opening the AI panel and page loads are not traced: they make no model call and only add noise.
 TRACED = {"/api/ai/chat": "chat", "/api/workflows/": "workflow", "/api/messages": "family_message",
           "/api/proposals/": "draft_decision"}

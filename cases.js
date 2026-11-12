@@ -1,4 +1,4 @@
-/* Case workspace: case list (caseworker landing tab), case/child page, application page and the Binti AI panel.
+/* Case workspace: case list (caseworker landing tab), case/child page, application page and the Agency AI panel.
    Talks to the Python API in /api. The persona switcher stands in for sign-in in this prototype. */
 (function () {
   var esc = H.esc;
@@ -211,7 +211,7 @@
   function briefingCard() {
     var b = B.briefing;
     if (!b) return "<div class='bw-card'><div class='bd muted'>Building your day…</div></div>";
-    return "<div class='bw-card'><div class='hd'><h3>" + SPARK + " Your day</h3><span class='bw-chip blue'>Binti AI</span></div><div class='bd bw-brief'>" +
+    return "<div class='bw-card'><div class='hd'><h3>" + SPARK + " Your day</h3><span class='bw-chip blue'>Agency AI</span></div><div class='bd bw-brief'>" +
       "<p>" + esc(b.summary) + "</p>" +
       b.items.map(function (i) { return "<button class='item' data-bw='open-case' data-arg='" + esc(i.case_id) + "'><span><b>" + esc(i.child) + "</b>: " + esc(i.title) + "<br><span class='muted small'>" + esc(i.why) + "</span></span></button>"; }).join("") +
       "<div class='bw-tile'><b>" + b.time_back.minutes + " min</b>returned to you by signed AI-drafted notes</div><p class='muted small'>" + esc(b.time_back.note) + "</p></div></div>";
@@ -228,10 +228,10 @@
       "<div class='meta'>" + esc(ch.gender) + " · " + esc(ch.pronouns) + " · " + esc(ch.language) + " · " + esc(c.case_no) + "</div>" +
       "<div style='margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;align-items:center'>" + stage({ index: x.stage[0], name: stageName(x.stage[0]) }) +
       (x.flags || c.flags).map(flagChip).join("") + "</div></div>" +
-      btn(SPARK.replace("spark", "") + " Ask Binti AI", "panel-open", null, "ai") + "</div>" +
+      btn(SPARK.replace("spark", "") + " Ask Agency AI", "panel-open", null, "ai") + "</div>" +
       "<nav class='bw-tabs' role='tablist'>" + tabs.map(function (t) { return "<button role='tab' data-bw='tab' data-arg='" + t[0] + "' aria-selected='" + (B.tab === t[0]) + "'>" + t[1] + "</button>"; }).join("") + "</nav>" +
       "<div class='bd'>" + tabBody(x) + "</div></div>";
-    var drafts = x.proposals.length ? "<div class='bw-card'><div class='hd'><h3>" + SPARK + " Binti AI drafts to review (" + x.proposals.length + ")</h3><span class='muted small'>Nothing is filed until you approve it.</span></div><div class='bd' style='display:flex;flex-direction:column;gap:12px'>" +
+    var drafts = x.proposals.length ? "<div class='bw-card'><div class='hd'><h3>" + SPARK + " Agency AI drafts to review (" + x.proposals.length + ")</h3><span class='muted small'>Nothing is filed until you approve it.</span></div><div class='bd' style='display:flex;flex-direction:column;gap:12px'>" +
       x.proposals.map(draftBox).join("") + "</div></div>" : "";
     var side = "<div class='bw-card'><div class='hd'><h3>Child and case</h3></div><div class='bd'><dl class='bw-dl'>" +
       dl("Placement", esc(p.caregiver || "—") + " <span class='muted'>(" + esc(p.kind || "") + ", since " + d(p.start_on) + ")</span>") + dl("Goal", esc(c.permanency_goal)) +
@@ -292,7 +292,7 @@
 
   function draftBox(p) {
     var pl = p.payload, k = p.kind, id = "prop-" + p.id;
-    var head = "<div class='t'>" + SPARK + " Binti AI draft · " + esc(p.summary) + "</div><div class='small muted'>Review and edit before you approve. AI never files anything on its own.</div>";
+    var head = "<div class='t'>" + SPARK + " Agency AI draft · " + esc(p.summary) + "</div><div class='small muted'>Review and edit before you approve. AI never files anything on its own.</div>";
     if (k === "note") {
       var f = B.findings[p.id];
       var fl = f ? (f.count ? f.findings.map(function (x) { return "<div class='bw-find'><b>\"" + esc(x.phrase) + "\"</b>: try " + esc(x.suggestion) + ". <span class='muted'>" + esc(x.why) + "</span></div>"; }).join("") :
@@ -378,7 +378,7 @@
         stepRows(x.approval.items) + "<p class='small muted'>" + esc(x.approval.note) + "</p></div></div>" :
       "<div class='bw-card'><div class='hd'><h3>Adoption steps</h3></div><div class='bd'>" + stepRows(x.adoption.steps) + "<p class='small muted'>" + esc(x.adoption.context) + " " + esc(x.adoption.note) + "</p></div></div>";
     return "<div class='bw-grid'><div style='display:flex;flex-direction:column;gap:16px;min-width:0'><div class='bw-card'><div class='bd bw-prof'><span class='bw-av lg'>" + c.avatar_svg + "</span><div class='grow'><h1>" + esc(c.name) + "<span>, age " + c.age + "</span></h1>" +
-      "<div class='meta'>" + esc(c.gender) + " · " + esc(c.pronouns) + "</div></div>" + btn("✦ Ask Binti AI", "panel-open", null, "ai") + "</div>" +
+      "<div class='meta'>" + esc(c.gender) + " · " + esc(c.pronouns) + "</div></div>" + btn("✦ Ask Agency AI", "panel-open", null, "ai") + "</div>" +
       "<div class='bd' style='border-top:1px solid var(--bw-line)'><dl class='bw-dl'>" + rows + "</dl><p class='small muted' style='margin-top:10px'>" + esc(x.hidden_note) + "</p></div></div>" +
       careNeedsCard(x.care_needs, first) + (x.view === "kin" ? supportsCard(x.supports, "kin") + progress : progress + supportsCard(x.supports, "foster")) +
       "<div class='bw-card'><div class='hd'><h3>Coming up</h3></div><div class='bd'><ul class='bw-list bw-tl'>" + x.schedule.map(function (s) { return "<li><time>" + d(s.date) + "</time><span>" + esc(s.what) + "</span></li>"; }).join("") + "</ul></div></div></div>" +
@@ -396,12 +396,12 @@
       var cls = s.status === "done" ? "done" : s.status === "in progress" ? "cur" : "";
       return "<li class='" + cls + "'><span class='dot'>" + (s.status === "done" ? "✓" : "") + "</span>" + esc(s.title) + "</li>";
     }).join("") + "</ol>";
-    var draft = B.appDraft ? "<div class='bw-ai'><div class='t'>" + SPARK + " Binti AI draft from your notes</div><div class='small muted'>" + esc(B.appDraft.banner) + "</div>" +
+    var draft = B.appDraft ? "<div class='bw-ai'><div class='t'>" + SPARK + " Agency AI draft from your notes</div><div class='small muted'>" + esc(B.appDraft.banner) + "</div>" +
       "<textarea data-bw-input='appdraft' aria-label='Draft answer'>" + esc(B.appDraft.draft) + "</textarea><div style='display:flex;gap:8px;flex-wrap:wrap'>" +
       btn("Use this answer", "app-accept", B.appDraft.proposal.proposal_id, "pri") + btn("Discard", "app-reject", B.appDraft.proposal.proposal_id) + "</div>" + rate("app-" + B.appDraft.proposal.proposal_id, "Application answer") + "</div>" : "";
     var tri = B.triage ? "<div class='bw-ai'><div class='t'>" + SPARK + " Triage result</div><dl class='bw-dl'>" + dl("Intent", esc(B.triage.intent)) + dl("Urgency", esc(B.triage.urgency)) + dl("Language", esc(B.triage.language)) + dl("Routed to", esc(B.triage.routed_to)) + "</dl><div class='small'><b>Acknowledgement sent:</b> " + esc(B.triage.acknowledgement) + "</div></div>" : "";
     var check = stepRows(a.checklist.map(function (i) { return { item: i.item + (i.note ? " · " + i.note : ""), status: i.status, holder: i.holder || "Agency", days: i.since, typical: i.typical, stalled: !!(i.typical && i.status !== "done" && i.since > i.typical[1]) }; }));
-    return "<div class='row between' style='display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px'><div><h1 style='font-size:24px;margin:0'>Initial application form</h1><p class='muted'>" + esc(a.application.household) + " · Licensing worker: " + esc(a.application.licensing_worker.name) + "</p></div>" + btn("✦ Ask Binti AI", "panel-open", null, "ai") + "</div>" +
+    return "<div class='row between' style='display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px'><div><h1 style='font-size:24px;margin:0'>Initial application form</h1><p class='muted'>" + esc(a.application.household) + " · Licensing worker: " + esc(a.application.licensing_worker.name) + "</p></div>" + btn("✦ Ask Agency AI", "panel-open", null, "ai") + "</div>" +
       "<div class='bw-app'><div class='bw-card'><div class='bd'>" + steps + "</div></div><div style='display:flex;flex-direction:column;gap:16px;min-width:0'>" +
       "<div class='bw-card'><div class='hd'><h3>Home information</h3></div><div class='bd'>" +
       "<div class='bw-field'><label>Address</label><input value='" + esc(f.address) + "' readonly></div>" +
@@ -409,20 +409,20 @@
       "<div class='bw-field'><label>Home description</label><textarea readonly>" + esc(f.home_description) + "</textarea></div></div></div>" +
       "<div class='bw-card'><div class='hd'><h3>Narrative: Why do you want to foster?</h3></div><div class='bd'>" +
       (f.why_foster ? "<div class='bw-field'><label>Your submitted answer</label><textarea readonly>" + esc(f.why_foster) + "</textarea></div>" : "") +
-      "<div class='bw-field'><label for='bw-notes'>Write a few notes in your own words. Binti AI turns them into a draft you can edit.</label><textarea id='bw-notes' data-bw-input='notes' placeholder='e.g. we have a spare room, my sister fostered, we love kids, flexible work'>" + esc(B.notes || "") + "</textarea></div>" +
+      "<div class='bw-field'><label for='bw-notes'>Write a few notes in your own words. Agency AI turns them into a draft you can edit.</label><textarea id='bw-notes' data-bw-input='notes' placeholder='e.g. we have a spare room, my sister fostered, we love kids, flexible work'>" + esc(B.notes || "") + "</textarea></div>" +
       btn("✦ Help me write this", "app-help", "why_foster", "pri") + "<div style='margin-top:12px'>" + draft + "</div></div></div>" +
       "<div class='bw-grid' style='grid-template-columns:minmax(0,1fr) minmax(0,1fr)'><div class='bw-card'><div class='hd'><h3>Your checklist</h3><span class='small muted'>Who has each item, and for how long</span></div><div class='bd'>" + check + "</div></div>" +
       "<div style='display:flex;flex-direction:column;gap:16px;min-width:0'>" + contactsCard(a.contacts) + messagesCard(a.messages) + "</div></div>" +
       "<div class='bw-grid' style='grid-template-columns:minmax(0,1fr)'>" +
-      "<div class='bw-card'><div class='hd'><h3>Inquiry triage (demo)</h3></div><div class='bd'><p class='small muted'>What a new family's inquiry looks like when it arrives. Binti AI detects language, intent and urgency, routes it to a named worker and sends an acknowledgement.</p>" +
+      "<div class='bw-card'><div class='hd'><h3>Inquiry triage (demo)</h3></div><div class='bd'><p class='small muted'>What a new family's inquiry looks like when it arrives. Agency AI detects language, intent and urgency, routes it to a named worker and sends an acknowledgement.</p>" +
       "<div class='bw-field'><label>Name</label><input data-bw-input='tri-name' value='" + esc(B.triName || "Alex Rivera") + "'></div><div class='bw-field'><label>Message</label><textarea data-bw-input='tri-text'>" + esc(B.triText || "Hi, my partner and I are thinking about fostering teens. How do we start?") + "</textarea></div>" +
       btn("Submit inquiry", "triage") + "<div style='margin-top:12px'>" + tri + "</div></div></div></div></div></div>";
   }
 
-  /* ---------- caseworker home: full-screen Binti AI over the whole caseload ---------- */
+  /* ---------- caseworker home: full-screen Agency AI over the whole caseload ---------- */
   var LEVEL = { urgent: "Urgent", soon: "Soon", routine: "Routine" };
   function viewHome() {
-    if (B.as.persona !== "caseworker") return "<div class='bw-card'><div class='bd'>Binti AI home is for caseworkers. Use the sidebar.</div></div>";
+    if (B.as.persona !== "caseworker") return "<div class='bw-card'><div class='bd'>Agency AI home is for caseworkers. Use the sidebar.</div></div>";
     var H2 = B.home, x = H2.data;
     var first = B.people ? ((B.people.caseworker.filter(function (p) { return p.id === B.as.user; })[0] || {}).name || "").split(" ")[0] : "";
     var body;
@@ -438,7 +438,7 @@
       var wl = B.workload, strip = "";
       if (wl) {
         strip = "<div class='bw-wl'>" + [[wl.cases, "cases", "Recommended about " + wl.recommended], [wl.due_this_week, "due this week", "Tasks and hearings"], [wl.overdue, "with overdue items", "Visits or tasks"],
-          [wl.drafts_to_sign, "AI drafts to sign", "Review, then sign"], [wl.court_within_14, "court within 14 days", "Reports Binti AI can assemble"], [x.time_back.minutes + " min", "back from AI drafts", "From signed drafts, not a model"]].map(function (t) {
+          [wl.drafts_to_sign, "AI drafts to sign", "Review, then sign"], [wl.court_within_14, "court within 14 days", "Reports Agency AI can assemble"], [x.time_back.minutes + " min", "back from AI drafts", "From signed drafts, not a model"]].map(function (t) {
           return "<div class='t'><b>" + t[0] + "</b><span>" + t[1] + "</span><small>" + t[2] + "</small></div>"; }).join("") + "</div>" +
           (wl.recognition.length ? "<div class='bw-recog'>" + wl.recognition.map(function (r) { return "<div><b>" + esc(r.from_name) + "</b> · " + d(r.on_date) + "<br>" + esc(r.text) + "</div>"; }).join("") + "</div>" : "");
       }
@@ -449,8 +449,8 @@
         "<div class='bw-sugg'>" + x.suggestions.map(function (q) { return "<button type='button' data-bw='home-ask' data-arg='" + esc(q) + "'>" + esc(q) + "</button>"; }).join("") + "</div>";
     }
     return "<section class='bw-home'><div class='bw-home-scroll' id='bw-home-scroll'><div class='bw-home-in'>" +
-      "<h1 class='bw-home-h'>" + SPARK + " Binti AI" + (first ? "<span>for " + esc(first) + "'s caseload</span>" : "") + "</h1>" + body + "</div></div>" +
-      "<form data-bw-form='home-chat' class='bw-composer'><textarea name='q' rows='1' data-bw-input='home-draft' placeholder='Ask about any child or your whole caseload' aria-label='Message Binti AI. Enter to send, Shift+Enter for a new line'" + (H2.busy ? " disabled" : "") + ">" + esc(H2.draft || "") + "</textarea>" +
+      "<h1 class='bw-home-h'>" + SPARK + " Agency AI" + (first ? "<span>for " + esc(first) + "'s caseload</span>" : "") + "</h1>" + body + "</div></div>" +
+      "<form data-bw-form='home-chat' class='bw-composer'><textarea name='q' rows='1' data-bw-input='home-draft' placeholder='Ask about any child or your whole caseload' aria-label='Message Agency AI. Enter to send, Shift+Enter for a new line'" + (H2.busy ? " disabled" : "") + ">" + esc(H2.draft || "") + "</textarea>" +
       "<button class='bw-btn pri' type='submit'" + (H2.busy ? " disabled" : "") + ">Send</button><span class='hint'>Enter to send · Shift+Enter for a new line · Answers name the child they're about</span></form></section>";
   }
   function homeAsk(text) {
@@ -477,7 +477,7 @@
     function it(href, label, on, extra) { return "<a href='" + href + "'" + (on ? " aria-current='page'" : "") + ">" + label + (extra || "") + "</a>"; }
     if (per === "caseworker") {
       var n = B.people ? ((B.people.caseworker.filter(function (p) { return p.id === B.as.user; })[0] || {}).cases || "") : "";
-      items = it("#/home", SPARK + " Binti AI", v === "home") + it("#/cases", "My cases", v === "list" || v === "case", n ? "<span class='n'>" + n + "</span>" : "");
+      items = it("#/home", SPARK + " Agency AI", v === "home") + it("#/cases", "My cases", v === "list" || v === "case", n ? "<span class='n'>" + n + "</span>" : "");
     } else if (per === "kin") items = it("#/cases", "My family", v === "list" || v === "case");
     else if (per === "foster") items = it("#/cases", "My child", v === "list" || v === "case");
     else items = it("#/application", "My application", v === "app");
@@ -499,11 +499,11 @@
           return "<li class='bw-wsrow'><span><b>" + esc(t.label || t.type) + "</b><br><span class='muted small'>" + esc((last.content || "").replace(/[*#`|]/g, "").slice(0, 120)) + (last.content && last.content.length > 120 ? "…" : "") + "</span></span>" +
             "<span class='meta'><span class='muted small'>" + n + " question" + (n === 1 ? "" : "s") + " · " + (t.updated ? d(t.updated.slice(0, 10)) : "") + "</span>" + btn("Open", "ws-open", k, "sm pri") + "</span></li>";
         }).join("") + "</ul></div></div>";
-    }).join("") : "<div class='bw-card'><div class='bd bw-empty'>No saved chats yet. Ask Binti AI something as any persona and it shows up here.</div></div>";
-    return "<div><h1 style='font-size:22px;margin:0'>Workspace</h1><p class='muted'>Every Binti AI chat you've had, for every persona, saved in this browser only. Other people using this link can't see them. Switching personas keeps each one's history.</p></div>" + body;
+    }).join("") : "<div class='bw-card'><div class='bd bw-empty'>No saved chats yet. Ask Agency AI something as any persona and it shows up here.</div></div>";
+    return "<div><h1 style='font-size:22px;margin:0'>Workspace</h1><p class='muted'>Every Agency AI chat you've had, for every persona, saved in this browser only. Other people using this link can't see them. Switching personas keeps each one's history.</p></div>" + body;
   }
 
-  /* ---------- Binti AI panel ---------- */
+  /* ---------- Agency AI panel ---------- */
   function panel() {
     var P = B.panel;
     if (!P.open) return "";
@@ -526,9 +526,9 @@
       body = "<div class='ai-side' id='bw-side'>" + side + "</div><div class='ai-chat' id='bw-chat'>" + chat + "</div>";
     }
     var what = B.as.persona === "caseworker" ? "this case" : B.as.persona !== "applicant" ? "the child, money, approval or who to call" : "your application";
-    var toggle = btn(B.full ? "⤡ Panel view" : "⤢ Full screen", "panel-full", null, "sm", " aria-pressed='" + B.full + "' title='" + (B.full ? "Back to the side panel" : "Open Binti AI full screen") + "'");
-    return (B.full ? "" : "<div class='bw-scrim' data-bw='panel-close'></div>") + "<aside class='bw-panel" + (B.full ? " full" : "") + "' aria-label='Binti AI'><div class='ph'><h2>" + SPARK + " Binti AI</h2>" + toggle + btn("Close", "panel-close", null, "sm ghost") + "</div>" +
-      "<div class='pb' id='bw-pb'>" + body + "</div><form data-bw-form='chat'><textarea name='q' rows='1' data-bw-input='chat-draft' placeholder='Ask about " + what + "' aria-label='Message Binti AI. Enter to send, Shift+Enter for a new line'" + (P.busy ? " disabled" : "") + ">" + esc(P.draft || "") + "</textarea>" +
+    var toggle = btn(B.full ? "⤡ Panel view" : "⤢ Full screen", "panel-full", null, "sm", " aria-pressed='" + B.full + "' title='" + (B.full ? "Back to the side panel" : "Open Agency AI full screen") + "'");
+    return (B.full ? "" : "<div class='bw-scrim' data-bw='panel-close'></div>") + "<aside class='bw-panel" + (B.full ? " full" : "") + "' aria-label='Agency AI'><div class='ph'><h2>" + SPARK + " Agency AI</h2>" + toggle + btn("Close", "panel-close", null, "sm ghost") + "</div>" +
+      "<div class='pb' id='bw-pb'>" + body + "</div><form data-bw-form='chat'><textarea name='q' rows='1' data-bw-input='chat-draft' placeholder='Ask about " + what + "' aria-label='Message Agency AI. Enter to send, Shift+Enter for a new line'" + (P.busy ? " disabled" : "") + ">" + esc(P.draft || "") + "</textarea>" +
       "<button class='bw-btn pri' type='submit'" + (P.busy ? " disabled" : "") + ">Send</button><span class='hint'>Enter to send · Shift+Enter for a new line</span></form></aside>";
   }
   function actionCard(a) {
@@ -644,7 +644,7 @@
     }
   };
   function runWf(path, body, done) {
-    toast("Binti AI is working…");
+    toast("Agency AI is working…");
     api(path, body).then(function (r) {
       if (r.error) return toast(r.error);
       toast(done); reloadCase(true);

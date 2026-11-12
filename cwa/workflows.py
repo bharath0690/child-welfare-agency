@@ -112,7 +112,7 @@ def visit_note(ident, case_id, visit_id):
     findings = guardrails.language_check(body)
     prop = gateway.call(ident, "note_draft", {"case_id": case_id, "visit_id": int(visit_id), "body": body})
     return {"proposal": prop, "body": body, "language_findings": findings, "mode": mode,
-            "banner": "Binti AI draft. Review, edit and sign. Each line cites the transcript time."}
+            "banner": "Agency AI draft. Review, edit and sign. Each line cites the transcript time."}
 
 
 # ------------------------------------------------------------------------------------------------------
@@ -163,7 +163,7 @@ def prefill(ident, case_id, visit_id):
     }
     prop = gateway.call(ident, "form_prefill_draft", {"case_id": case_id, "visit_id": int(visit_id), "form_type": FORM, "fields": fields})
     return {"proposal": prop, "form_type": FORM, "fields": fields, "mode": "rules",
-            "banner": "Binti AI pre-fill. Each field shows its source quote and confidence. Low-confidence fields need your input."}
+            "banner": "Agency AI pre-fill. Each field shows its source quote and confidence. Low-confidence fields need your input."}
 
 
 # ------------------------------------------------------------------------------------------------------
@@ -220,7 +220,7 @@ def first_contact(ident, case_id, relationship_id):
     prop = gateway.call(ident, "outreach_draft", {"case_id": case_id, "relationship_id": rel["id"], "language": lang, "body": body})
     return {"proposal": prop, "to": rel["name"], "relation": rel["relation"], "language": lang, "body": body, "note": note,
             "reading_grade": round(guardrails.reading_grade(body), 1) if lang == "English" else None, "mode": mode,
-            "banner": "Binti AI draft. You review and send. Translations need a bilingual check before sending."}
+            "banner": "Agency AI draft. You review and send. Translations need a bilingual check before sending."}
 
 
 # ------------------------------------------------------------------------------------------------------
@@ -261,7 +261,7 @@ def application_help(ident, field, notes):
         raise gateway.GatewayError("bad_field", "Pick a narrative field.")
     notes = (notes or "").strip()
     if not notes:
-        return {"error": "Write a few words of your own first. Binti AI drafts from your words, not from nothing."}
+        return {"error": "Write a few words of your own first. Agency AI drafts from your words, not from nothing."}
     mode, text = "scripted", None
     if llm.enabled():
         try:
@@ -279,7 +279,7 @@ def application_help(ident, field, notes):
         text = f"{lead} {body[0].lower() + body[1:] if body else ''}." if not body.lower().startswith(lead.lower()) else body + "."
     prop = gateway.call(ident, "application_field_draft", {"field": field, "value": text})
     return {"proposal": prop, "field": field, "label": FIELD_LABELS[field], "draft": text, "mode": mode,
-            "banner": "Binti AI draft from your own notes. Edit it so it sounds like you, then submit."}
+            "banner": "Agency AI draft from your own notes. Edit it so it sounds like you, then submit."}
 
 
 # ------------------------------------------------------------------------------------------------------
@@ -314,11 +314,11 @@ def court_report(ident, case_id, hearing_date):
               f"- {len(reached)} of {len(rels)} identified relatives reached. (Source: relationships)"]
     lines += [f"- {r['name']} ({r['relation']}): {r['contact_status']}" + (f", last contact {r['last_contact_on']}" if r["last_contact_on"] else "") + ". (Source: relationships)" for r in rels]
     lines += ["", "7. Recommendation",
-              "[Written by the caseworker. Binti AI does not draft recommendations on placement, custody or reunification.]"]
+              "[Written by the caseworker. Agency AI does not draft recommendations on placement, custody or reunification.]"]
     body = "\n".join(lines)
     prop = gateway.call(ident, "court_report_draft", {"case_id": case_id, "hearing_date": hearing_date, "body": body})
     return {"proposal": prop, "body": body, "mode": "rules",
-            "banner": "Binti AI draft of cited facts. Check each line, write the recommendation, then sign."}
+            "banner": "Agency AI draft of cited facts. Check each line, write the recommendation, then sign."}
 
 
 def caseworker_workload(ident):

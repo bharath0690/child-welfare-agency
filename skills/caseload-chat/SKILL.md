@@ -1,12 +1,12 @@
 ---
 name: caseload-chat
-description: Answer a caseworker's question about any child on their caseload, or the whole caseload, from the Binti AI home screen. Use when there is no open case, for example "what needs me today", "which cases have court soon", or a question naming a child.
+description: Answer a caseworker's question about any child on their caseload, or the whole caseload, from the Agency AI home screen. Use when there is no open case, for example "what needs me today", "which cases have court soon", or a question naming a child.
 allowed-tools: cases_list_assigned, case_get, relationships_list, tasks_list, court_dates_list, visits_list, visit_get, notes_search, referrals_list, plan_get, proposals_list, memory_note
 metadata:
   persona: caseworker
   kind: agent
   phase: 1
-  feature: Caseload assistant (Binti AI home)
+  feature: Caseload assistant (Agency AI home)
 ---
 # Caseload chat
 

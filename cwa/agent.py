@@ -1,4 +1,4 @@
-"""Persona agent runtime (architecture section 1): one runtime, three persona profiles from AGENTS.md.
+"""Persona agent runtime (architecture section 1): one runtime, four persona profiles from AGENTS.md.
 
 The "current object" is the case/child page (caseworker, kin) or the family's application (applicant).
 Chat history and memory are stored per object, so nothing carries across cases.
@@ -42,7 +42,7 @@ def resolve_object(ident, obj_type, obj_id):
     if obj_type == "caseload":
         return "caseload", ident.user_id
     if obj_type != "case" or obj_id not in ident.case_ids:
-        raise gateway.GatewayError("forbidden", "Open one of your assigned cases to use Binti AI on it.")
+        raise gateway.GatewayError("forbidden", "Open one of your assigned cases to use Agency AI on it.")
     return "case", obj_id
 
 

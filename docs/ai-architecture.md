@@ -1,6 +1,6 @@
-# Binti AI architecture
+# Agency AI architecture
 
-v1.2 · Nov 2026 · @Bharath · Target design taken from the persona canvas (`canvas/index.html`), revised against public evidence (section 10). Section 9 maps it to this repo. Binti's existing AI work is unknown, so validate with engineering before building.
+v1.2 · Nov 2026 · @Bharath · Target design taken from the persona canvas (`canvas/index.html`), revised against public evidence (section 10). Section 9 maps it to this repo. Existing AI work on the platform is unknown, so validate with engineering before building.
 
 ## Decisions
 
@@ -77,7 +77,7 @@ The law list is from general knowledge. Counsel confirms it per jurisdiction bef
 
 ## 4. Tool gateway
 
-Each Binti module sits behind one gateway, exposed as MCP servers. For each call the gateway:
+Each Child Welfare Agency module sits behind one gateway, exposed as MCP servers. For each call the gateway:
 1. Exchanges the session for a scoped token and authorizes with the **user's** identity, never the agent's.
 2. Checks the persona allowlist and validates inputs against a schema. User text is never put into a query unescaped.
 3. Applies the **disclosure policy matrix**: one row per field (name, date of birth, medical, school, court dates, parent contact, reason for removal, **care needs**), one column per persona and agency setting. Care needs (routines, health, school, what helps) are a separate field from the reason for removal, so caregivers can learn what the child needs without being told why the child came into care. Care-needs sharing is on by default in the prototype and needs counsel's sign-off. Data is removed before it reaches the model. The matrix is agency configuration, signed off by counsel, because the rules vary by jurisdiction.
@@ -96,7 +96,7 @@ Phase 1 gives caseworkers time back, ships the safety harness, and closes the fa
 |---|---|---|---|
 | Workload view and recognition **(v1.2)** | Caseloads far above the recommended level; turnover follows workload and poor support | Cases against the recommended level, due this week, overdue, drafts to sign, court within 14 days and minutes back, all from data. Supervisor recognition of named work. No scores | 1 |
 | Day briefing | The day is assembled from spreadsheets and email | Workflow over tasks, calendar and case events, ranked by urgency. Shown as color-coded cards (urgent, soon, routine) that start a question in the caseload chat | 1 |
-| Caseload assistant (Binti AI home) | Opening each child's page to ask a question is slow | The caseworker lands on a full-screen chat over their whole caseload. Each answer names the child and case it draws on. It reads any assigned case through the gateway, and saves memory only to one case | 1 |
+| Caseload assistant (Agency AI home) | Opening each child's page to ask a question is slow | The caseworker lands on a full-screen chat over their whole caseload. Each answer names the child and case it draws on. It reads any assigned case through the gateway, and saves memory only to one case | 1 |
 | Case next action | Working out what a case needs costs time | Rules name the stage and the actions, each with a reason and source. The worker pins and reorders, and those priorities are saved per case | 1 |
 | Case summary | Handoff packets are thin | Case retrieval with a source on every line | 1 |
 | Case chat | Answers are spread across five screens | Agent loop over case tools | 1 |
@@ -187,7 +187,7 @@ flowchart TB
     subgraph Data[Data access]
         GW[Tool gateway MCP<br/>scoped token, allowlist,<br/>disclosure matrix, log]
         RAG[Hybrid retrieval<br/>law, program, case record]
-        MOD[Binti modules<br/>system of record]
+        MOD[Child Welfare Agency modules<br/>system of record]
     end
     MG[Model gateway<br/>routing, zero retention, region pinning]
     HITL[Human in the loop<br/>review, sign-off, handoff]
@@ -265,7 +265,7 @@ flowchart TB
 3. What data residency and vendor terms apply per state, and later in Canada and Australia? This covers the model vendor and the eval and logging vendor (Braintrust in the prototype).
 4. Who curates the law corpus, and how often?
 5. Which confidentiality regimes apply (child welfare, education, health)?
-6. Does Binti's existing AI work already fix the model provider or the chat surface?
+6. Does existing AI work on the platform already fix the model provider or the chat surface?
 7. Can counsel approve sharing care needs with kin and foster parents, and which fields count as care needs in each jurisdiction?
 8. Which supports can kin get before licensing in each launch state, and can the agency start those applications for them?
 9. How will drafts and status reach the state system without double entry, which one source links to burnout?
@@ -284,18 +284,18 @@ The prototype uses fictional data only.
 
 | Design | Code |
 |---|---|
-| Runtime and personas (D1) | `binti/agent.py` loads the core rules and one persona profile from `AGENTS.md` |
+| Runtime and personas (D1) | `cwa/agent.py` loads the core rules and one persona profile from `AGENTS.md` |
 | Specialists | 18 Agent Skills in `skills/<name>/SKILL.md`. The agent sees each name and description, and calls `load_skill` for the body |
-| Workflows (D4) | `binti/workflows.py`: briefing, workload, visit note, pre-fill, language check, court report, first contact, triage, application help |
-| Gateway (D2, D3) | `binti/gateway.py`: one schema registry, persona allowlist, per-user scope, disclosure matrix, audit on every call, idempotent proposals. Plain function calls stand in for MCP |
-| Stage and next action (D7) | `binti/stages.py`. Court actions open the court report workflow |
+| Workflows (D4) | `cwa/workflows.py`: briefing, workload, visit note, pre-fill, language check, court report, first contact, triage, application help |
+| Gateway (D2, D3) | `cwa/gateway.py`: one schema registry, persona allowlist, per-user scope, disclosure matrix, audit on every call, idempotent proposals. Plain function calls stand in for MCP |
+| Stage and next action (D7) | `cwa/stages.py`. Court actions open the court report workflow |
 | Caregiver features (v1.2) | Gateway tools `care_needs_get`, `contacts_get`, `messages_get`, `approval_status_get`, `supports_get`, `adoption_status_get`; reply deadlines and escalation in `gateway.messages_with_clock`. Foster parent persona `fp1` (the Hughes family, adopting Isabella) |
 | Retrieval (D5) | `program_search`: BM25-style keyword search, with the audience filter applied first. The vector half and the law corpus come in Phase 2 |
 | Memory | **Browser workspace** (prototype): each viewer's chats and "remember" facts live in their browser, keyed by persona and object, and are sent with each request (`agent.workspace`). While a workspace is active the server neither stores nor returns chat history from its shared database, so anonymous viewers never see each other's chats. Memories are scoped per persona, so a caseworker's notes never reach the kin agent. Server tables `chat_messages` and `case_memory` remain for database mode and tests. Production replaces the browser store with a per-user server store behind sign-in |
-| Guardrails | `binti/guardrails.py`. Safety detection runs before any model call |
-| Model gateway | `binti/llm.py`: DeepSeek through `DEEPSEEK_API_KEY`, with a scripted fallback on the same gateway. The vendor choice is still subject to open questions 3 and 6 |
+| Guardrails | `cwa/guardrails.py`. Safety detection runs before any model call |
+| Model gateway | `cwa/llm.py`: DeepSeek through `DEEPSEEK_API_KEY`, with a scripted fallback on the same gateway. The vendor choice is still subject to open questions 3 and 6 |
 | Audit | The `audit_log` table, shown in the case page's Audit log tab |
-| Online evals and tracing | `binti/observability.py` sends one Braintrust trace per AI request (chat, workflow, family message, draft decision), tagged by kind and persona, with model and tool spans nested inside. Chat traces carry a conversation id and turn number, so a conversation can be grouped and scored as a whole. Tool calls outside a traced request are not logged. Tool spans log field names, not values. Safety disclosures are redacted, and `BRAINTRUST_LOG_CONTENT=false` logs metadata only. Approvals, edit similarity and draft ratings are attached as feedback scores. Off unless `BRAINTRUST_API_KEY` is set. With real case data, Braintrust becomes a data processor and falls under open question 3 |
+| Online evals and tracing | `cwa/observability.py` sends one Braintrust trace per AI request (chat, workflow, family message, draft decision), tagged by kind and persona, with model and tool spans nested inside. Chat traces carry a conversation id and turn number, so a conversation can be grouped and scored as a whole. Tool calls outside a traced request are not logged. Tool spans log field names, not values. Safety disclosures are redacted, and `BRAINTRUST_LOG_CONTENT=false` logs metadata only. Approvals, edit similarity and draft ratings are attached as feedback scores. Off unless `BRAINTRUST_API_KEY` is set. With real case data, Braintrust becomes a data processor and falls under open question 3 |
 | Evals | `tests/` (unit tests), `evals/golden.json` with `evals/run_evals.py` (49-case golden set, with evidence-based cases per persona), `evals/braintrust_eval.py` (the same set as a Braintrust experiment, with a pass score per persona group and LLM-judge scores for helpfulness and politeness and empathy from `evals/judges.py`; `evals/braintrust_scorers.py` saves the same judges as Braintrust library scorers for online scoring of production logs), CI in `.github/workflows/evals.yml`, and draft ratings in the AI quality drawer |
 | SMS | Not built. Needs a messaging provider |
 | Speech to text | Not built. Transcripts are seeded, with consent and speaker labels |

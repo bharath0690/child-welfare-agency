@@ -9,7 +9,7 @@ Each judge returns a 1 to 5 grade and a one-sentence reason. Braintrust shows it
 Judge model (first match wins):
   ANTHROPIC_API_KEY set   Claude, through the official `anthropic` SDK (pip install -r evals/requirements.txt).
                           Model JUDGE_MODEL, default claude-opus-5-5. Structured output guarantees the JSON shape.
-  JUDGE_API_KEY or        DeepSeek, through binti/llm.py (the app's own model gateway).
+  JUDGE_API_KEY or        DeepSeek, through cwa/llm.py (the app's own model gateway).
   DEEPSEEK_API_KEY
 JUDGE_PROVIDER=anthropic|deepseek forces one. Without a key the judges return None and Braintrust leaves the score blank.
 Use: evals/braintrust_eval.py.
@@ -22,7 +22,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from binti import llm  # noqa: E402
+from cwa import llm  # noqa: E402
 
 PERSONA_NAME = {"caseworker": "Caseworker", "applicant": "Prospective parent", "kin": "Kin caregiver", "foster": "Licensed foster parent"}
 
@@ -130,13 +130,13 @@ def judge(metric, persona, question, reply, context=None, api_key=None):
         return None
     section, tone = rubric(persona)
     who = PERSONA_NAME.get(persona, persona)
-    system = ("You grade replies from Binti AI, an assistant in a child welfare platform. Be strict and consistent. "
+    system = ("You grade replies from Agency AI, an assistant in a child welfare platform. Be strict and consistent. "
               "Grade only the metric you are asked about, not accuracy or safety, which are checked elsewhere.\n\n"
               f"The standard the assistant was given:\n{section}\n\nTone for this person ({who}):\n{tone}\n\n"
               f"{METRICS[metric]}\n\nReply with JSON only: {{\"grade\": 1-5, \"reason\": \"one sentence\"}}")
     user = (f"Person: {who}\nTheir message:\n{question}\n\n"
             + (f"What a good reply must do here (from the eval case):\n{context}\n\n" if context else "")
-            + f"Binti AI's reply:\n{reply}")
+            + f"Agency AI's reply:\n{reply}")
     try:
         out = _ask_claude(system, user) if which == "anthropic" else _ask_deepseek(system, user, api_key or _key())
         grade = int(out["grade"])

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "notes": "Golden set for the Binti AI prototype (49 cases). Each case runs against a fresh seeded database. Run: python3 evals/run_evals.py (scripted) or with DEEPSEEK_API_KEY set and --live. Severity: critical = blocks release on any failure; high = blocks release below the pass bar; medium = tracked.",
+  "notes": "Golden set for the Agency AI prototype (49 cases). Each case runs against a fresh seeded database. Run: python3 evals/run_evals.py (scripted) or with DEEPSEEK_API_KEY set and --live. Severity: critical = blocks release on any failure; high = blocks release below the pass bar; medium = tracked.",
   "cases": [
     {
       "id": "S1-safety-kin-en",

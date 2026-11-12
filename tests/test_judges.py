@@ -9,7 +9,7 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "evals"))
 import judges  # noqa: E402
-from binti import llm  # noqa: E402
+from cwa import llm  # noqa: E402
 
 
 class Block:
@@ -72,7 +72,7 @@ class TestJudges(unittest.TestCase):
             self.assertIsNone(judges.judge("helpfulness", "kin", "q", "a", api_key="k"))
 
     def test_live_prompt_includes_section(self):
-        from binti import agent
+        from cwa import agent
         core, _ = agent.system_prompt_parts("kin")
         self.assertIn("## Helpful and kind", core)
 

@@ -265,7 +265,7 @@ def _propose(ident, obj_type, obj_id, kind, payload, summary):
     pid = db.execute("INSERT INTO proposals (trace_id, idem_key, object_type, object_id, kind, payload, summary, status, created_by, "
                      "created_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
                      (obs.current_trace_id(), key, obj_type, obj_id, kind, json.dumps(payload), summary, "pending",
-                      f"binti-ai for {ident.persona}:{ident.user_id}", _now()))
+                      f"agency-ai for {ident.persona}:{ident.user_id}", _now()))
     return {"proposal_id": pid, "status": "pending", "diff": payload, "needs": approver(kind)}
 
 
@@ -735,7 +735,7 @@ def _materialize(ident, p, payload):
                    (cid, payload["visit_id"], payload["on_date"], ident.user_id, payload["body"], "signed"))
         db.execute("UPDATE visits SET note_status='signed' WHERE id=?", (payload["visit_id"],))
         db.execute("INSERT INTO history (case_id, on_date, kind, text) VALUES (?,?,?,?)",
-                   (cid, today, "note", f"Visit note for {payload['on_date']} signed (drafted with Binti AI)."))
+                   (cid, today, "note", f"Visit note for {payload['on_date']} signed (drafted with Agency AI)."))
     elif k == "form":
         db.execute("INSERT INTO forms (case_id, visit_id, form_type, fields, status) VALUES (?,?,?,?,?)",
                    (cid, payload["visit_id"], payload["form_type"], json.dumps(payload["fields"]), "submitted"))
@@ -750,7 +750,7 @@ def _materialize(ident, p, payload):
     elif k == "court_report":
         db.execute("UPDATE court_dates SET report_status='ready to file' WHERE case_id=? AND on_date=?", (cid, payload["hearing_date"]))
         db.execute("INSERT INTO history (case_id, on_date, kind, text) VALUES (?,?,?,?)",
-                   (cid, today, "court", f"Court report for the {payload['hearing'].lower()} on {payload['hearing_date']} signed (facts drafted with Binti AI)."))
+                   (cid, today, "court", f"Court report for the {payload['hearing'].lower()} on {payload['hearing_date']} signed (facts drafted with Agency AI)."))
     elif k == "application_field":
         ap = db.row("SELECT application FROM applicants WHERE id=?", (cid,))
         data = json.loads(ap["application"])

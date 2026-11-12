@@ -1,6 +1,6 @@
 """SQLite connection and lazy seeding.
 
-Local: data/binti.db, persistent.
+Local: data/cwa.db, persistent.
 Vercel: the deploy filesystem is read-only, so the database is seeded into /tmp on cold start.
 Writes (chat history, memory, approvals) last while that instance stays warm, then reset to the seed.
 """
@@ -17,11 +17,11 @@ _generation = 0              # bumped by reset_for_tests so threads drop stale c
 
 
 def db_path() -> str:
-    if os.environ.get("BINTI_DB"):
-        return os.environ["BINTI_DB"]
+    if os.environ.get("CWA_DB"):
+        return os.environ["CWA_DB"]
     if os.environ.get("VERCEL"):
-        return "/tmp/binti.db"
-    return str(ROOT / "data" / "binti.db")
+        return "/tmp/cwa.db"
+    return str(ROOT / "data" / "cwa.db")
 
 
 def _open(path):
@@ -66,7 +66,7 @@ def reset_for_tests(path=":memory:"):
             _shared.close()
         _shared = None
         _generation += 1
-    os.environ["BINTI_DB"] = path
+    os.environ["CWA_DB"] = path
     return connect()
 
 

@@ -16,7 +16,7 @@ sys.path.insert(0, str(ROOT))
 if "--live" not in sys.argv:
     os.environ.pop("DEEPSEEK_API_KEY", None)
 
-from binti import agent, db, gateway, guardrails, stages, workflows  # noqa: E402
+from cwa import agent, db, gateway, guardrails, stages, workflows  # noqa: E402
 
 G = gateway
 

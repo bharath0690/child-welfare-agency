@@ -17,7 +17,7 @@ Privacy rules (prototype; fictional data only):
 
 Settings (environment variables):
   BRAINTRUST_API_KEY      required to turn logging on
-  BRAINTRUST_PROJECT      optional, default "binti-ai-prototype"
+  BRAINTRUST_PROJECT      optional, default "child-welfare-agency"
   BRAINTRUST_LOG_CONTENT  optional, "false" logs metadata only
 """
 import contextlib
@@ -25,11 +25,11 @@ import contextvars
 import os
 import time
 
-PROJECT = os.environ.get("BRAINTRUST_PROJECT", "binti-ai-prototype")
+PROJECT = os.environ.get("BRAINTRUST_PROJECT", "child-welfare-agency")
 REDACTED = "[redacted: safety disclosure]"
 _logger = None
 _failed = False
-_trace = contextvars.ContextVar("binti_trace_id", default=None)
+_trace = contextvars.ContextVar("cwa_trace_id", default=None)
 
 
 def current_trace_id():
