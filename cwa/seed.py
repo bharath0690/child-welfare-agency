@@ -1,6 +1,6 @@
 """Schema and fictional seed data. Run directly to rebuild the local database:
 
-    python -m binti.seed            # rebuilds data/binti.db
+    python -m cwa.seed            # rebuilds data/cwa.db
 
 All names, cases and events are fictional. Dates are relative to today so the data never goes stale.
 """
@@ -385,7 +385,7 @@ PROGRAM_DOCS = [
      "the job, not a sign you are failing."),
     ("Legal questions as a caregiver", "foster",
      "You get notice of court hearings and can tell the court how the child is doing. For questions about your rights, court "
-     "notices, guardianship or adoption, call the caregiver legal help line. Binti AI can explain how things usually work, but it "
+     "notices, guardianship or adoption, call the caregiver legal help line. Agency AI can explain how things usually work, but it "
      "does not give legal advice."),
     ("Help you can get before you are licensed", "kin",
      "You do not have to wait for a license to get some help. Many relatives can apply right away for a child-only cash grant, "
@@ -436,7 +436,7 @@ KIN_APPROVAL = [
 ]
 KIN_SUPPORTS = [
     {"name": "Child-only cash grant", "status": "ready to apply", "license": False,
-     "note": "No license needed. Binti AI can start the application from what the agency already knows; you submit it."},
+     "note": "No license needed. Agency AI can start the application from what the agency already knows; you submit it."},
     {"name": "Health coverage for Sofia", "status": "active", "license": False, "note": "Sofia is covered. Her card is with Maya."},
     {"name": "Emergency clothing and bed voucher", "status": "available now", "license": False, "note": "Ask Maya. Issued the same week."},
     {"name": "Food assistance", "status": "check eligibility", "license": False, "note": "Depends on household income."},
@@ -560,7 +560,7 @@ def seed(conn):
                     "VALUES (?,?,?,?,?,?,?,?,?)",
                     (f"note:{vid}", "case", case_id, "note",
                      json.dumps({"visit_id": vid, "body": AI_DRAFT_JAYLEN, "on_date": d(v[0])}),
-                     f"Visit note draft for {d(v[0])}", "pending", "binti-ai", d(v[0]) + "T17:00:00"))
+                     f"Visit note draft for {d(v[0])}", "pending", "agency-ai", d(v[0]) + "T17:00:00"))
         for r in c["referrals"]:
             ins("INSERT INTO referrals (case_id, provider, service, status, sent_on) VALUES (?,?,?,?,?)",
                 (case_id, r[0], r[1], r[2], d(r[3]) if r[3] is not None else None))

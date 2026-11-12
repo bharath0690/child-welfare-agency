@@ -33,7 +33,7 @@
       H.aiBanner("Built from your calendar, tasks and case notes.") +
       card("Your day in short", "<p>Four things need you today. The 9:00 Harper visit matters most: the counseling referral has had no reply in three days, so ask Dana whether she has heard from Bright Path. The school-records consent is two days overdue and Eli's school asked for it twice.</p><div style='margin-top:8px'>" + H.rate("cw-day", "Start-of-day summary", [10, 2]) + "</div>") +
       "<div class='grid2'>" + card("Today, ordered by urgency", t) + card("What your week looks like", "<div class='stack'><div class='tile'><b>3 h 40 min</b>returned to you this week (illustrative)</div><div class='tile'><b>6 of 9</b>Harper plan steps completed</div><div class='tile'><b>2</b>relatives found on the Harper case</div></div><p class='small muted' style='margin-top:8px'>Time and progress only. No scores or rankings.</p>") + "</div>" +
-      H.chat("cw", "Chat with Binti AI");
+      H.chat("cw", "Chat with Agency AI");
   };
 
   /* 1 · Accept a new case */
@@ -46,7 +46,7 @@
       card("Family network so far", "<p class='small'><b>Dana Harper</b>, mother. <b>Rosa Delgado</b>, maternal grandmother, not yet contacted. Father's whereabouts unknown.</p>") +
       card("Open questions", "<ul class='small' style='margin:0;padding-left:18px'><li>Is there a safe relative who could help?</li><li>Language preferences: Dana, English. Rosa, Spanish.</li><li>School records not yet released</li></ul>") + "</div>" +
       card("Note from your supervisor", "<p class='small'>Sam Whitfield: \"Dana is engaged. Please look at kin early, and call me after the first visit.\"</p>") +
-      H.rate("cw-case", "Case summary", [30, 5]) + H.chat("cw", "Chat with Binti AI");
+      H.rate("cw-case", "Case summary", [30, 5]) + H.chat("cw", "Chat with Agency AI");
   };
 
   /* 2 · Plan: referrals with closed-loop status */
@@ -88,7 +88,7 @@
       h += H.aiBanner("Drafted from the transcript. You decide what goes in the record.") +
         "<div class='grid2'>" + card("Visit note", "<p>" + shown + "</p>" +
         (fixed ? "<p class='small' style='margin-top:8px'><span class='chip'>Language check passed</span></p>" : "<div class='ai-box' style='margin-top:10px'><b>Language check</b><p class='small'>\"Failed to follow up\" puts the blame on Dana. In the transcript she says she left a message on Monday.</p>" + btn("Use suggested wording", "toggle", "fix", "ai") + "</div>")) +
-        card("Form fields, filled from the visit", "<table class='t'><tr><td>Visit date</td><td class='prefill'>14 Oct, 9:00</td></tr><tr><td>Location</td><td class='prefill'>Home of Rosa Delgado</td></tr><tr><td>Present</td><td class='prefill'>Dana, Eli, Nora</td></tr><tr><td>School attendance</td><td class='prefill'>Eli back at school</td></tr><tr><td>Referral follow-up</td><td class='prefill'>Pending reply</td></tr></table><p class='small muted' style='margin-top:6px'>Shaded fields were filled by Binti AI.</p>") + "</div>" +
+        card("Form fields, filled from the visit", "<table class='t'><tr><td>Visit date</td><td class='prefill'>14 Oct, 9:00</td></tr><tr><td>Location</td><td class='prefill'>Home of Rosa Delgado</td></tr><tr><td>Present</td><td class='prefill'>Dana, Eli, Nora</td></tr><tr><td>School attendance</td><td class='prefill'>Eli back at school</td></tr><tr><td>Referral follow-up</td><td class='prefill'>Pending reply</td></tr></table><p class='small muted' style='margin-top:6px'>Shaded fields were filled by Agency AI.</p>") + "</div>" +
         H.rate("cw-note", "Visit note and form fields", [45, 12]) +
         "<div class='row'>" + (has("signed") ? "<span class='chip'>Signed. Note done in 11 min against about 45 today (illustrative).</span>" : "<label class='row small'><input type='checkbox' data-act='toggle' data-arg='read'" + (has("read") ? " checked" : "") + "> I have read and edited this draft</label>" + btn("Sign and submit", "toggle", "signed", "pri", !has("read"))) + "</div>";
     }
@@ -119,7 +119,7 @@
     var h = "<div class='row between'><h3>Family finding · Eli and Nora</h3><span class='chip'>2 relatives found</span></div>";
     h += "<div class='grid2'>" + card("Search results", "<div class='opt'><b>Rosa Delgado, 61</b><span class='small muted'>Maternal grandmother. Dana's emergency contact. Lives at the address of the 14 Oct visit.</span><div class='chips' style='margin-top:6px'><span class='chip'>Strong match</span>" + H.src("Emergency contact") + H.src("School record") + "</div></div><div style='height:8px'></div><div class='opt'><b>Marco Delgado, 34</b><span class='small muted'>Maternal uncle. Possible. Address needs checking.</span><div class='chips' style='margin-top:6px'><span class='chip warn'>Low confidence</span>" + H.src("Public record") + "</div></div>") +
       card("Genogram", gen + "<p class='small muted'>Updates itself as relatives are added.</p>") + "</div>";
-    h += card("Outreach to Rosa", "<div class='row'><div class='lang'><button type='button' data-act='lang' data-arg='en' aria-pressed='" + (S.lang === "en") + "'>English</button><button type='button' data-act='lang' data-arg='es' aria-pressed='" + (S.lang === "es") + "'>Español</button></div>" + (S.lang === "es" ? "<span class='chip ai'>Translated by Binti AI</span>" : "") + "</div><p style='margin:10px 0'>" + esc(S.lang === "es" ? MSG_ES : MSG_EN) + "</p>" + (S.lang === "es" ? H.aiBanner("Have a Spanish speaker check it before sending.") + "<div style='margin-top:6px'>" + H.rate("cw-es", "Spanish outreach translation", [20, 4]) + "</div>" : "") +
+    h += card("Outreach to Rosa", "<div class='row'><div class='lang'><button type='button' data-act='lang' data-arg='en' aria-pressed='" + (S.lang === "en") + "'>English</button><button type='button' data-act='lang' data-arg='es' aria-pressed='" + (S.lang === "es") + "'>Español</button></div>" + (S.lang === "es" ? "<span class='chip ai'>Translated by Agency AI</span>" : "") + "</div><p style='margin:10px 0'>" + esc(S.lang === "es" ? MSG_ES : MSG_EN) + "</p>" + (S.lang === "es" ? H.aiBanner("Have a Spanish speaker check it before sending.") + "<div style='margin-top:6px'>" + H.rate("cw-es", "Spanish outreach translation", [20, 4]) + "</div>" : "") +
       "<div class='row' style='margin-top:10px'>" + (sent ? "<span class='chip'>Sent to Rosa in " + (S.lang === "es" ? "Spanish" : "English") + "</span>" + (has("replied") ? "<span class='chip'>Rosa replied: \"Yes, call me after 4.\"</span>" : btn("Simulate reply", "toggle", "replied", "sm")) : btn("Send", "toggle", "sent", "pri")) + "</div>");
     return h;
   };
@@ -134,7 +134,7 @@
      ["Progress and services", "Plan v2 agreed 10 Oct. Six of nine steps complete. Referral to Bright Path sent; intake booked for 21 Oct.", ["Case plan", "Referral log"]],
      ["Efforts to find relatives", "Two relatives identified. Rosa Delgado contacted in Spanish on 15 Oct and replied the same day. Marco Delgado not yet reached. Efforts are documented automatically.", ["Family finding log"]]
     ].forEach(function (s) { h += "<div class='card sec-n'><h4>" + s[0] + "</h4><p class='small'>" + s[1] + "</p><div class='chips' style='margin-top:6px'>" + s[2].map(H.src).join("") + "</div></div>"; });
-    h += "<div class='card sec-n manual'><h4>Recommendation <span class='chip warn'>Written by you</span></h4><p class='small muted'>Binti AI does not draft placement or custody recommendations.</p><div class='field' style='margin-top:6px'><textarea data-bind='recTxt' aria-label='Recommendation' placeholder='Write your recommendation'>" + esc(rec) + "</textarea></div></div>";
+    h += "<div class='card sec-n manual'><h4>Recommendation <span class='chip warn'>Written by you</span></h4><p class='small muted'>Agency AI does not draft placement or custody recommendations.</p><div class='field' style='margin-top:6px'><textarea data-bind='recTxt' aria-label='Recommendation' placeholder='Write your recommendation'>" + esc(rec) + "</textarea></div></div>";
     h += H.rate("cw-court", "Court report draft", [240, 60]) + "<div class='row'>" + (has("filed") ? "<span class='chip'>Approved for filing</span>" : btn("Approve for filing", "fileRep", null, "pri", false)) + (ok || has("filed") ? "" : "<span class='small muted'>Write the recommendation first.</span>") + "</div>";
     return h;
   };
@@ -147,6 +147,6 @@
     return "<div class='row between'><h3>Close case · Harper</h3>" + (done ? "<span class='chip'>Closed</span>" : "") + "</div>" +
       card("Closing checklist, filled from the case", items.map(function (x) { return "<div class='task done'><input type='checkbox' checked disabled><span class='t'>" + x + "</span></div>"; }).join("")) +
       card("Outcome", "<p><b>Eli and Nora placed with kin.</b> They live with their grandmother, Rosa Delgado. Dana sees them weekly.</p>" + (done ? "" : "<div class='row' style='margin-top:10px'>" + btn("Close the case", "toggle", "closed", "pri") + "</div>")) +
-      (done ? "<div class='card' style='background:var(--accent-soft)'><h4>A quiet milestone</h4><p class='small'>Shared with Sam Whitfield. Across this case Binti returned about 9 h 20 min of paperwork time to you (illustrative).</p><div class='field' style='margin-top:8px'><label for='rec-n'>Prompt for your supervisor: name something specific</label><input id='rec-n' data-bind='kudo' value='" + esc(S.f.kudo || "Maya's early kin search made this placement possible.") + "'></div></div>" : "");
+      (done ? "<div class='card' style='background:var(--accent-soft)'><h4>A quiet milestone</h4><p class='small'>Shared with Sam Whitfield. Across this case Child Welfare Agency returned about 9 h 20 min of paperwork time to you (illustrative).</p><div class='field' style='margin-top:8px'><label for='rec-n'>Prompt for your supervisor: name something specific</label><input id='rec-n' data-bind='kudo' value='" + esc(S.f.kudo || "Maya's early kin search made this placement possible.") + "'></div></div>" : "");
   };
 })();

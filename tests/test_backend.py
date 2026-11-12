@@ -11,8 +11,8 @@ import unittest
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ.pop("DEEPSEEK_API_KEY", None)  # tests run in scripted mode
 
-from binti import agent, db, gateway, guardrails, skills, stages, workflows  # noqa: E402
-from binti.api import app  # noqa: E402
+from cwa import agent, db, gateway, guardrails, skills, stages, workflows  # noqa: E402
+from cwa.api import app  # noqa: E402
 
 G = gateway
 

@@ -22,7 +22,7 @@
 
   /* small building blocks used by the screens */
   H.card = function (title, body, cls) { return "<div class='card " + (cls || "") + "'>" + (title ? "<h4>" + title + "</h4>" : "") + body + "</div>"; };
-  H.aiBanner = function (text) { return "<div class='ai-banner'><b>Binti AI draft.</b> <span>" + (text || "Review and edit before you use it.") + "</span></div>"; };
+  H.aiBanner = function (text) { return "<div class='ai-banner'><b>Agency AI draft.</b> <span>" + (text || "Review and edit before you use it.") + "</span></div>"; };
   H.btn = function (label, act, arg, cls, disabled) {
     return "<button type='button' class='btn " + (cls || "") + "' data-act='" + act + "'" + (arg != null ? " data-arg='" + esc(arg) + "'" : "") + (disabled ? " disabled" : "") + ">" + label + "</button>";
   };
@@ -95,7 +95,7 @@
       "<div class='card'><span class='mono'>Journey notes</span><h4 style='margin-top:4px'>" + esc(s.n) + "</h4><p class='small muted'>" + esc(s.g) + "</p>" +
       "<div class='pair' style='margin-top:12px'>" + H.face(s.ts, "t lg") + "<div><span class='chip gap'>Today: " + esc(s.fl) + "</span><p class='small'>" + esc(s.fr) + "</p></div></div>" +
       "<div class='pair'>" + H.face(s.ps, "p lg") + "<div><span class='chip'>With the product</span><p class='small'>" + esc(s.pd) + "</p></div></div>" +
-      (s.ns ? "<p class='small' style='margin-top:10px'><span class='chip warn'>New surface</span> Not described on Binti's site, so this screen is a proposal.</p>" : "") +
+      (s.ns ? "<p class='small' style='margin-top:10px'><span class='chip warn'>New surface</span> Not described on the platform's public site, so this screen is a proposal.</p>" : "") +
       "<div class='chips' style='margin-top:10px'>" + mods + "</div><p class='small muted' style='margin-top:8px'>Signal to watch: " + esc(s.sg) + "</p></div>" +
       "<div class='row'>" + H.btn("Back", "stage", S.i - 1, "", S.i === 0) + H.btn(last ? "Back to start" : "Next stage", "stage", last ? 0 : S.i + 1, "pri") + "</div>";
   }

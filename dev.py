@@ -1,7 +1,7 @@
 """Local dev server: static front end + /api on one port.
 
     python dev.py            # http://localhost:3000
-    python dev.py --reseed   # rebuild data/binti.db first
+    python dev.py --reseed   # rebuild data/cwa.db first
 
 Reads a .env file in this folder if present (for DEEPSEEK_API_KEY). Never commit .env.
 """
@@ -20,11 +20,11 @@ if env.exists():
             os.environ.setdefault(k.strip(), v.strip().strip('"'))
 
 if "--reseed" in sys.argv:
-    (ROOT / "data" / "binti.db").unlink(missing_ok=True)
+    (ROOT / "data" / "cwa.db").unlink(missing_ok=True)
 
-from binti.api import app as api_app  # noqa: E402
+from cwa.api import app as api_app  # noqa: E402
 
-BLOCKED = {".env", ".git", "data", "binti", "tests", "api", "skills"}
+BLOCKED = {".env", ".git", "data", "cwa", "tests", "api", "skills"}
 
 
 def app(environ, start_response):
@@ -54,7 +54,7 @@ class Quiet(WSGIRequestHandler):
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 3000))
-    from binti import db, llm
+    from cwa import db, llm
     db.connect()
-    print(f"Binti AI prototype on http://localhost:{port}  (AI mode: {'live, ' + llm.model_name() if llm.enabled() else 'scripted'})")
+    print(f"Agency AI prototype on http://localhost:{port}  (AI mode: {'live, ' + llm.model_name() if llm.enabled() else 'scripted'})")
     make_server("127.0.0.1", port, app, handler_class=Quiet).serve_forever()

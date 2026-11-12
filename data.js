@@ -1,4 +1,4 @@
-/* Priority personas. ts = how the stage feels today, ps = intended feeling with the product, scale -2 to 2. ns = needs a surface not described on Binti's site. */
+/* Priority personas. ts = how the stage feels today, ps = intended feeling with the product, scale -2 to 2. ns = needs a surface not described on the platform's public site. */
 var PRI = [
  { name: "Caseworker", cat: "Daily operators",
    why: "Carries the largest administrative load and touches the most modules, so time returned here helps every other team. Your priority is work that feels rewarding, so this journey follows one case from the first day to close, with reward moments built in.",
@@ -19,7 +19,7 @@ var PRI = [
     { n: "Build the plan with the family", g: "Agree goals and services the family will use.", fr: "Plans live in documents and referrals go out by email.", fl: "Slowed down", ts: 0, ps: 1,
       pd: "A guided plan turns goals into dated tasks. Referrals go to providers from the plan, and their status comes back to the caseworker.", m: "cm,prv", sg: "Plans completed on time, referrals confirmed" },
     { n: "Visit and capture", g: "Spend the visit with the family, not the keyboard.", fr: "Notes are written in the field and again in the system.", fl: "Behind", ts: -1, ps: 2,
-      pd: "Record the visit and Binti AI drafts the note and form fields for the worker to review and sign. Design for patchy signal in the field (to confirm).", m: "cm,ai", sg: "Minutes from visit to finished note" },
+      pd: "Record the visit and Agency AI drafts the note and form fields for the worker to review and sign. Design for patchy signal in the field (to confirm).", m: "cm,ai", sg: "Minutes from visit to finished note" },
     { n: "Find and engage kin", g: "Find a relative who can care for the child.", fr: "Searches run across separate tools, trees are drawn by hand and outreach is tracked by hand.", fl: "Frustrated", ts: -1, ps: 2,
       pd: "Search records, see a genogram that updates itself, send templated outreach in the relative's language and see who has responded, all on the child's record.", m: "ffe,ai", sg: "Relatives identified and responding" },
     { n: "Prepare for court", g: "Give the court a clear, accurate report.", fr: "Facts are pulled from many places the night before.", fl: "Pressured", ts: -2, ps: 0,
@@ -42,7 +42,7 @@ var PRI = [
     { n: "Complete requirements", g: "Know exactly what is outstanding.", fr: "Unsure what is outstanding, and documents are requested again.", fl: "Anxious", ts: -2, ps: 1,
       pd: "A checklist shows consents, background checks, references and training with their status. References are requested automatically.", m: "lic,api", sg: "Document requests per family" },
     { n: "Home study", g: "Prepare for the visit and get through it.", fr: "The family does not know in advance what the visit checks (to validate).", fl: "Nervous", ts: -1, ps: 1,
-      pd: "A booking step and a checklist of what the visit covers. The worker completes the forms digitally during the visit, with a draft from Binti AI.", m: "lic,ai", sg: "Days from booking to completed study" },
+      pd: "A booking step and a checklist of what the visit covers. The worker completes the forms digitally during the visit, with a draft from Agency AI.", m: "lic,ai", sg: "Days from booking to completed study" },
     { n: "Approval and wait", g: "Know when a decision will come.", fr: "A long, unclear wait with little visibility.", fl: "Left waiting", ts: -2, ps: 0,
       pd: "Status shows where the application sits, what remains and an expected timeframe. The approval notice arrives with the next steps.", m: "lic", sg: "Status enquiries by phone, days to approval" },
     { n: "Get matched", g: "Start with confidence.", fr: "Little guidance on a first placement.", fl: "Uncertain", ts: 0, ps: 2,
@@ -75,5 +75,5 @@ var PRI = [
 var MODN = {
   int: "Intake", inv: "Investigations", lic: "Licensing", plc: "Placement", cm: "Case management",
   ffe: "Family finding and engagement", prv: "Provider network", elg: "Eligibility and payments",
-  rpt: "Reporting", api: "Integrations", ai: "Binti AI", cfg: "Configuration"
+  rpt: "Reporting", api: "Integrations", ai: "Agency AI", cfg: "Configuration"
 };

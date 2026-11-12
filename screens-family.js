@@ -63,7 +63,7 @@
       card("Pick a time", ["Tue 12 Nov · 10:00", "Thu 14 Nov · 16:30", "Sat 16 Nov · 9:00"].map(function (x) { return "<div class='row' style='margin-bottom:6px'>" + btn(x, "set", "slot=" + x, b === x ? "pri" : "") + "</div>"; }).join("")) +
       (b ? "<div class='card' style='background:var(--accent-soft)'><b>Booked: " + b + "</b><p class='small'>Jordan will bring the checklist below. A calendar invite is on its way.</p></div>" : "") +
       card("What the visit covers", "<ul class='small' style='margin:0;padding-left:18px'><li>Smoke and carbon monoxide alarms</li><li>A bed and space for each child</li><li>Safe storage for medicines and cleaning products</li><li>A conversation with every adult and child in the home</li></ul>") +
-      "<p class='small muted'>Behind the scenes: Jordan completes the forms on a tablet during the visit, and Binti AI drafts the report for Jordan to review.</p>" + btn("Next: approval", "stage", 5, "");
+      "<p class='small muted'>Behind the scenes: Jordan completes the forms on a tablet during the visit, and Agency AI drafts the report for Jordan to review.</p>" + btn("Next: approval", "stage", 5, "");
   };
 
   SP[5] = function () {
@@ -102,7 +102,7 @@
   SK[0] = function () {
     var t = T[S.lang];
     return "<div class='row between'>" + lang() + "</div><h3>" + t.h + "</h3>" + card("", "<p>" + t.p1 + "</p><p style='margin-top:8px'><b>" + t.p2 + "</b></p>") +
-      (S.lang === "es" ? "<div class='ai-banner'><b>Translated by Binti AI.</b> <span>Maya checked the Spanish before sending.</span></div>" : "") +
+      (S.lang === "es" ? "<div class='ai-banner'><b>Translated by Agency AI.</b> <span>Maya checked the Spanish before sending.</span></div>" : "") +
       "<div class='row'>" + btn(t.call, "toggle", "call", "pri") + btn(t.more, "stage", 1) + "</div>" +
       (has("call") ? "<p class='small'>" + (S.lang === "es" ? "Maya la llamará hoy después de las 4." : "Maya will call you today after 4.") + "</p>" : "") + (S.lang === "es" ? H.rate("kc-first", "Spanish first-contact message", [20, 4]) : "");
   };

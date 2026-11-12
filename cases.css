@@ -1,4 +1,4 @@
-/* Case workspace (case list, case page, application, Binti AI panel). Scoped under .bw so the journey screens keep their look. */
+/* Case workspace (case list, case page, application, Agency AI panel). Scoped under .bw so the journey screens keep their look. */
 :root {
   --bw-bg: #f4f6fa; --bw-surface: #ffffff; --bw-ink: #1f2937; --bw-muted: #6b7280; --bw-line: #e3e7ee;
   --bw-blue: #2563eb; --bw-blue-ink: #ffffff; --bw-blue-soft: #e8f0fe; --bw-blue-text: #1d4ed8;
@@ -99,7 +99,7 @@ body.bw-homeview { overflow: hidden; }
 .bw-main { padding: 18px 24px 60px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 .bw-main.home { padding: 0; }
 
-/* caseworker home: full-screen Binti AI */
+/* caseworker home: full-screen Agency AI */
 .bw-home { height: calc(100vh - 53px); display: flex; flex-direction: column; background: var(--bw-bg); }
 .bw-home-scroll { flex: 1; overflow-y: auto; }
 .bw-home-in { max-width: 1000px; margin: 0 auto; padding: 22px 24px 12px; display: flex; flex-direction: column; gap: 16px; }
@@ -250,7 +250,7 @@ table.bw-t { width: 100%; border-collapse: collapse; font-size: 14px; }
 .bw-tl li { justify-content: flex-start; }
 .bw-tl time { color: var(--bw-muted); min-width: 64px; font-size: 13px; }
 
-/* AI review box (Binti AI draft) */
+/* AI review box (Agency AI draft) */
 .bw-ai { border: 1.5px solid var(--bw-ai-line); background: var(--bw-ai-soft); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
 .bw-ai .t { display: flex; gap: 8px; align-items: center; font-weight: 600; }
 .bw-ai .t .spark, .spark { color: var(--bw-ai); }
@@ -266,7 +266,7 @@ table.bw-t { width: 100%; border-collapse: collapse; font-size: 14px; }
 .bw-rate button { border: 1px solid var(--bw-line); background: var(--bw-surface); color: var(--bw-ink); border-radius: 999px; padding: 2px 10px; cursor: pointer; font-size: 12.5px; }
 .bw-rate button[aria-pressed="true"] { background: var(--bw-blue); color: var(--bw-blue-ink); border-color: var(--bw-blue); }
 
-/* Binti AI panel */
+/* Agency AI panel */
 .bw-panel { position: fixed; top: 0; right: 0; bottom: 0; width: min(440px, 100vw); background: var(--bw-surface); border-left: 1px solid var(--bw-line); box-shadow: -8px 0 30px rgba(17,24,39,.12); z-index: 60; display: flex; flex-direction: column; color: var(--bw-ink); }
 .bw-panel[hidden] { display: none; }
 .bw-panel .ph { padding: 12px 14px; border-bottom: 1px solid var(--bw-line); display: flex; gap: 8px; align-items: center; }

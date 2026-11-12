@@ -1,4 +1,4 @@
 # The backend runs on the Python standard library alone. This one package is optional:
-# with BRAINTRUST_API_KEY set it sends production traces (binti/observability.py) and eval experiments
+# with BRAINTRUST_API_KEY set it sends production traces (cwa/observability.py) and eval experiments
 # (evals/braintrust_eval.py) to Braintrust. Without the key, nothing is sent.
 braintrust==0.49.3

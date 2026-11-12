@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from binti import api, db, observability as obs  # noqa: E402
+from cwa import api, db, observability as obs  # noqa: E402
 
 
 class FakeSpan:

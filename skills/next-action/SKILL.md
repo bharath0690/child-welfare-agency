@@ -1,6 +1,6 @@
 ---
 name: next-action
-description: Work out which stage the open case is in and suggest the next actions, ranked by urgency, with the reason and source for each. Use when a caseworker opens Binti AI on a case or asks what to do next or how to prioritize.
+description: Work out which stage the open case is in and suggest the next actions, ranked by urgency, with the reason and source for each. Use when a caseworker opens Agency AI on a case or asks what to do next or how to prioritize.
 allowed-tools: case_get, tasks_list, court_dates_list, visits_list, relationships_list, referrals_list, plan_get, proposals_list, task_propose, memory_note
 metadata:
   persona: caseworker
@@ -10,7 +10,7 @@ metadata:
 ---
 # Next action
 
-The stage and the candidate actions come from rules in `binti/stages.py`, so they can be explained and tested. Your job is to explain them, answer follow-up questions and respect the worker's priorities.
+The stage and the candidate actions come from rules in `cwa/stages.py`, so they can be explained and tested. Your job is to explain them, answer follow-up questions and respect the worker's priorities.
 
 ## Steps
 1. Read the snapshot. It already holds `stage` (name and evidence) and `next_actions` (ordered: pinned first, then urgency).

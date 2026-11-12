@@ -5,7 +5,7 @@
     python3 evals/braintrust_eval.py --local    # run with the Braintrust SDK but send nothing
 
 Needs `pip install braintrust` and BRAINTRUST_API_KEY (except with --local). The project is BRAINTRUST_PROJECT,
-default "binti-ai-prototype". Cases, checks and pass rules are the same as evals/run_evals.py, so both runners
+default "child-welfare-agency". Cases, checks and pass rules are the same as evals/run_evals.py, so both runners
 always agree. Each case is tagged with its persona, severity and, for evidence-based cases, the public source.
 
 Scores per case:
@@ -35,7 +35,7 @@ import judges  # noqa: E402
 
 import braintrust  # noqa: E402
 
-PROJECT = os.environ.get("BRAINTRUST_PROJECT", "binti-ai-prototype")
+PROJECT = os.environ.get("BRAINTRUST_PROJECT", "child-welfare-agency")
 LOCAL = "--local" in sys.argv
 LIVE = "--live" in sys.argv
 GROUP = {"caseworker": "caseworker", "kin": "kin", "applicant": "parent", "foster": "parent"}
