@@ -10,7 +10,10 @@ Like evals/judges.py, the rubric is built from AGENTS.md: the "Helpful and kind"
 After you edit AGENTS.md, push again so the saved scorers match.
 
 The scorers call the model through Braintrust, so add an Anthropic key under Braintrust Settings -> AI providers.
-Model: JUDGE_MODEL, default claude-opus-5-5. Project: BRAINTRUST_PROJECT, default "binti-ai-prototype".
+Model: BRAINTRUST_JUDGE_MODEL, default claude-opus-5. Braintrust's LLM scorers force a tool call to get the choice,
+and Claude Opus 5.5 / Sonnet 5.5 reject a forced tool_choice (400), so the saved scorers use Claude Opus 5.
+(evals/judges.py calls Claude directly with structured output, so it can stay on claude-opus-5-5.)
+Project: BRAINTRUST_PROJECT, default "binti-ai-prototype".
 """
 import os
 import sys
@@ -21,7 +24,7 @@ import braintrust  # noqa: E402
 import judges  # noqa: E402
 
 PROJECT = os.environ.get("BRAINTRUST_PROJECT", "binti-ai-prototype")
-MODEL = os.environ.get("JUDGE_MODEL", "claude-opus-5-5")
+MODEL = os.environ.get("BRAINTRUST_JUDGE_MODEL", "claude-opus-5")
 CHOICES = {"1": 0.0, "2": 0.25, "3": 0.5, "4": 0.75, "5": 1.0}  # same scale as evals/judges.py
 
 

@@ -30,7 +30,7 @@ The judge's rubric is read from the "Helpful and kind" section and the persona's
 braintrust push evals/braintrust_scorers.py --if-exists replace
 ```
 
-This creates two LLM scorers, "Helpfulness" and "Politeness and empathy", built from the same `AGENTS.md` rubric. Braintrust runs them with its own model access, so add an Anthropic key under Braintrust **Settings → AI providers**. Push again after editing `AGENTS.md`. They are tracked, not a release gate, until they have been checked against human grades.
+This creates two LLM scorers, "Helpfulness" and "Politeness and empathy", built from the same `AGENTS.md` rubric. Braintrust runs them with its own model access, so add an Anthropic key under Braintrust **Settings → AI providers**. They use Claude Opus 5 (`BRAINTRUST_JUDGE_MODEL` changes it), because Braintrust's LLM scorers force a tool call and Claude Opus 5.5 rejects that. Push again after editing `AGENTS.md`. They are tracked, not a release gate, until they have been checked against human grades.
 
 ## Evidence-based cases, by persona
 
